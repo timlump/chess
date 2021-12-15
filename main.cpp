@@ -4,6 +4,19 @@
 int main()
 {
     gfx::gfx gfx;
+    
+    std::shared_ptr<gfx::shader> tri_shader;
+    {
+        std::string v_src = gfx::vertex_source;
+        std::string f_src = gfx::fragment_source;
+        tri_shader = std::make_shared<gfx::shader>(v_src, f_src);
+    }
+                
+    std::vector<gfx::vertex> vertices = {
+        {0.0f, 0.5f}, {0.5f,-0.5f},{-0.5f,-0.5f}
+    };
+    auto triangle = std::make_shared<gfx::mesh>(tri_shader,vertices);
+    gfx.add_mesh(triangle);
 
     while(gfx.draw()) {
         // do game logic here
