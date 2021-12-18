@@ -7,7 +7,7 @@ namespace graphics
 {
     class gfx {
         public:
-            gfx();
+            gfx(int width, int height);
 
             ~gfx();
 

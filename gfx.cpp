@@ -11,14 +11,14 @@ namespace graphics
         std::cerr << description << std::endl;
     }
 
-    gfx::gfx() {
+    gfx::gfx(int width, int height) {
         if (not glfwInit()) {
             throw std::runtime_error("unable to initialize glfw");
         }
 
         glfwSetErrorCallback(error_callback);
 
-        m_window = glfwCreateWindow(640, 480, "Chess", nullptr, nullptr);
+        m_window = glfwCreateWindow(width, height, "Chess", nullptr, nullptr);
         if (not m_window) {
             glfwTerminate();
             throw std::runtime_error("unable to create window");

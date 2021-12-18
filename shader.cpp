@@ -1,19 +1,51 @@
 #include "shader.h"
 #include <iostream>
 #include <stdexcept>
+#include <fstream>
 
 namespace graphics
 {
-    shader::shader(std::string vert_source, std::string frag_source) {
+    shader::shader(std::string vert_path, std::string frag_path) {
         std::cout << "Shader created\n";
 
         m_vertex_shader = glCreateShader(GL_VERTEX_SHADER);
         m_fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
 
-        auto vert_source_c = vert_source.c_str();
-        auto frag_source_c = frag_source.c_str();
-        glShaderSource(m_vertex_shader, 1, &vert_source_c, nullptr);
-        glShaderSource(m_fragment_shader, 1, &frag_source_c, nullptr);
+        {
+            std::string vert_source = "";
+            std::string frag_source = "";
+
+            std::ifstream vert_file(vert_path);
+            if (vert_file.is_open()) {
+                while(not vert_file.eof()) {
+                    char buffer[512];
+                    vert_file.getline(buffer, sizeof(buffer));
+                    vert_source += std::string(buffer) + "\n";
+                }
+                vert_file.close();
+            }
+            else {
+                throw std::runtime_error("unable to load vertex shader");
+            }
+
+            std::ifstream frag_file(frag_path);
+            if (frag_file.is_open()) {
+                while(not frag_file.eof()) {
+                    char buffer[512];
+                    frag_file.getline(buffer, sizeof(buffer));
+                    frag_source += std::string(buffer) + "\n";
+                }
+                frag_file.close();
+            }
+            else {
+                throw std::runtime_error("unable to load fragment shader");
+            }
+            
+            auto vert_source_c = vert_source.c_str();
+            auto frag_source_c = frag_source.c_str();
+            glShaderSource(m_vertex_shader, 1, &vert_source_c, nullptr);
+            glShaderSource(m_fragment_shader, 1, &frag_source_c, nullptr);
+        }
 
         bool successful_compile = true;
         glCompileShader(m_vertex_shader);

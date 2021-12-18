@@ -1,44 +1,17 @@
 #include "chess.h"
 #include "gfx.h"
 
-const char* vertex_source = 
-    R"glsl(
-        #version 300 es
-
-        in vec3 position;
-        uniform mat4 model;
-        uniform mat4 view;
-        uniform mat4 project;
-
-        void main()
-        {
-            mat4 mvp = project*view*model;
-            gl_Position = mvp*vec4(position, 1.0);
-        }
-    )glsl";
-
-const char* fragment_source =
-    R"glsl(
-        #version 300 es
-
-        out mediump vec4 outColor;
-
-        void main()
-        {
-            outColor = vec4(1.0, 0.0, 0.0, 1.0);
-        }
-    )glsl";
-
-
 int main()
 {
-    std::shared_ptr<graphics::gfx> gfx = std::make_shared<graphics::gfx>();
+    int width = 640;
+    int height = 480;
+    std::shared_ptr<graphics::gfx> gfx = std::make_shared<graphics::gfx>(width, height);
+    gfx->m_view_mat = glm::lookAt(glm::vec3(1.2f, 1.2f, 1.2f), glm::vec3(0.f), glm::vec3(0.f,0.f,1.f));
+    gfx->m_projection_mat = glm::perspective(glm::radians(45.f), width / (float)height, 1.f, 10.f);
     
     std::shared_ptr<graphics::shader> tri_shader;
     {
-        std::string v_src = vertex_source;
-        std::string f_src = fragment_source;
-        tri_shader = std::make_shared<graphics::shader>(v_src, f_src);
+        tri_shader = std::make_shared<graphics::shader>("shaders/basic.vert", "shaders/basic.frag");
     }
                 
     std::vector<graphics::vertex> vertices = {
