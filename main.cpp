@@ -1,24 +1,56 @@
 #include "chess.h"
 #include "gfx.h"
 
+const char* vertex_source = 
+    R"glsl(
+        #version 300 es
+
+        in vec3 position;
+        uniform mat4 model;
+        uniform mat4 view;
+        uniform mat4 project;
+
+        void main()
+        {
+            mat4 mvp = project*view*model;
+            gl_Position = mvp*vec4(position, 1.0);
+        }
+    )glsl";
+
+const char* fragment_source =
+    R"glsl(
+        #version 300 es
+
+        out mediump vec4 outColor;
+
+        void main()
+        {
+            outColor = vec4(1.0, 0.0, 0.0, 1.0);
+        }
+    )glsl";
+
+
 int main()
 {
-    gfx::gfx gfx;
+    std::shared_ptr<graphics::gfx> gfx = std::make_shared<graphics::gfx>();
     
-    std::shared_ptr<gfx::shader> tri_shader;
+    std::shared_ptr<graphics::shader> tri_shader;
     {
-        std::string v_src = gfx::vertex_source;
-        std::string f_src = gfx::fragment_source;
-        tri_shader = std::make_shared<gfx::shader>(v_src, f_src);
+        std::string v_src = vertex_source;
+        std::string f_src = fragment_source;
+        tri_shader = std::make_shared<graphics::shader>(v_src, f_src);
     }
                 
-    std::vector<gfx::vertex> vertices = {
-        {0.0f, 0.5f}, {0.5f,-0.5f},{-0.5f,-0.5f}
+    std::vector<graphics::vertex> vertices = {
+        {glm::vec3(0.0f, 0.5f, 0.0f)},
+        {glm::vec3(0.5f,-0.5f, 0.0f)},
+        {glm::vec3(-0.5f,-0.5f, 0.0f)}
     };
-    auto triangle = std::make_shared<gfx::mesh>(tri_shader,vertices);
-    gfx.add_mesh(triangle);
+    auto triangle = std::make_shared<graphics::mesh>(tri_shader, gfx.get(), vertices);
+    gfx->add_mesh(triangle);
 
-    while(gfx.draw()) {
+    while(gfx->draw()) {
+        triangle->m_model_mat = glm::rotate(triangle->m_model_mat, glm::radians(1.f), glm::vec3(0,0,1));
         // do game logic here
     }
 
