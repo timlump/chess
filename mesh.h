@@ -12,6 +12,7 @@ namespace graphics
     struct vertex
     {
         glm::vec3 pos;
+        glm::vec2 uv;
     };
 
     class gfx;

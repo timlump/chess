@@ -1,30 +1,59 @@
 #include "chess.h"
 #include "gfx.h"
+#include "primitives.h"
+
+void error_callback(int error, const char * description)
+{
+    std::cerr << "Error: " << error << std::endl;
+    std::cerr << description << std::endl;
+}
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int modes)
+{
+}
 
 int main()
 {
     int width = 640;
     int height = 480;
-    std::shared_ptr<graphics::gfx> gfx = std::make_shared<graphics::gfx>(width, height);
+    if (not glfwInit()) {
+        throw std::runtime_error("unable to initialize glfw");
+    }
+
+    glfwSetErrorCallback(error_callback);
+
+    GLFWwindow *window = glfwCreateWindow(width, height, "Chess", nullptr, nullptr);
+    if (not window) {
+        glfwTerminate();
+        throw std::runtime_error("unable to create window");
+    }
+
+    glfwMakeContextCurrent(window);
+    glfwSetKeyCallback(window, key_callback);
+
+    std::shared_ptr<graphics::gfx> gfx = std::make_shared<graphics::gfx>();
     gfx->m_view_mat = glm::lookAt(glm::vec3(1.2f, 1.2f, 1.2f), glm::vec3(0.f), glm::vec3(0.f,0.f,1.f));
     gfx->m_projection_mat = glm::perspective(glm::radians(45.f), width / (float)height, 1.f, 10.f);
     
-    std::shared_ptr<graphics::shader> tri_shader;
+    std::shared_ptr<graphics::shader> board_shader;
     {
-        tri_shader = std::make_shared<graphics::shader>("shaders/basic.vert", "shaders/basic.frag");
+        board_shader = std::make_shared<graphics::shader>("shaders/checker.vert", "shaders/checker.frag");
     }
-                
-    std::vector<graphics::vertex> vertices = {
-        {glm::vec3(0.0f, 0.5f, 0.0f)},
-        {glm::vec3(0.5f,-0.5f, 0.0f)},
-        {glm::vec3(-0.5f,-0.5f, 0.0f)}
-    };
-    auto triangle = std::make_shared<graphics::mesh>(tri_shader, gfx.get(), vertices);
-    gfx->add_mesh(triangle);
+    
+    auto board = std::make_shared<graphics::mesh>(board_shader, gfx.get(), primitives::SQUARE);
+    gfx->add_mesh(board);
 
-    while(gfx->draw()) {
-        triangle->m_model_mat = glm::rotate(triangle->m_model_mat, glm::radians(1.f), glm::vec3(0,0,1));
-        // do game logic here
+    while(not glfwWindowShouldClose(window)) {
+        glfwPollEvents();
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+            glfwSetWindowShouldClose(window, GL_TRUE);
+        }
+
+        // game logic here
+        board->m_model_mat = glm::rotate(board->m_model_mat, glm::radians(1.f), glm::vec3(0,0,1));
+
+        gfx->draw();
+        glfwSwapBuffers(window);
     }
 
     glfwTerminate();

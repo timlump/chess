@@ -24,7 +24,11 @@ namespace graphics
 
         GLint pos_attrib = glGetAttribLocation(shader->m_shader_program, "position");
         glEnableVertexAttribArray(pos_attrib);
-        glVertexAttribPointer(pos_attrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
+        GLint uv_attrib = glGetAttribLocation(shader->m_shader_program, "uv");
+        glEnableVertexAttribArray(uv_attrib);
+
+        glVertexAttribPointer(pos_attrib, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), 0);
+        glVertexAttribPointer(uv_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)sizeof(vertex::pos));
     }
 
     mesh::~mesh()
