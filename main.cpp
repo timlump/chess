@@ -43,6 +43,10 @@ int main()
     auto board = std::make_shared<graphics::mesh>(board_shader, gfx.get(), primitives::SQUARE);
     gfx->add_mesh(board);
 
+    auto piece = std::make_shared<graphics::mesh>(board_shader, gfx.get(), graphics::load_vertices("meshes/cylinder.raw"));
+    piece->m_model_mat = glm::scale(piece->m_model_mat, glm::vec3(0.05));
+    gfx->add_mesh(piece);
+
     while(not glfwWindowShouldClose(window)) {
         glfwPollEvents();
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {

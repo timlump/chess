@@ -5,6 +5,24 @@
 
 namespace graphics
 {
+    std::string readfile(std::string path)
+    {
+        std::string result = "";
+        std::ifstream file(path);
+        if (file.is_open()) {
+            while(not file.eof()) {
+                std::string line;
+                std::getline(file, line);
+                result += line + "\n";
+            }
+            file.close();
+        }
+        else {
+            throw std::runtime_error("unable to load vertex shader");
+        }
+        return result;
+    }
+
     shader::shader(std::string vert_path, std::string frag_path) {
         std::cout << "Shader created\n";
 
@@ -12,34 +30,8 @@ namespace graphics
         m_fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
 
         {
-            std::string vert_source = "";
-            std::string frag_source = "";
-
-            std::ifstream vert_file(vert_path);
-            if (vert_file.is_open()) {
-                while(not vert_file.eof()) {
-                    char buffer[512];
-                    vert_file.getline(buffer, sizeof(buffer));
-                    vert_source += std::string(buffer) + "\n";
-                }
-                vert_file.close();
-            }
-            else {
-                throw std::runtime_error("unable to load vertex shader");
-            }
-
-            std::ifstream frag_file(frag_path);
-            if (frag_file.is_open()) {
-                while(not frag_file.eof()) {
-                    char buffer[512];
-                    frag_file.getline(buffer, sizeof(buffer));
-                    frag_source += std::string(buffer) + "\n";
-                }
-                frag_file.close();
-            }
-            else {
-                throw std::runtime_error("unable to load fragment shader");
-            }
+            std::string vert_source = readfile(vert_path);
+            std::string frag_source = readfile(frag_path);
             
             auto vert_source_c = vert_source.c_str();
             auto frag_source_c = frag_source.c_str();

@@ -15,6 +15,10 @@ add_custom_command(TARGET ${CMAKE_PROJECT_NAME} PRE_BUILD
                    COMMAND ${CMAKE_COMMAND} -E create_symlink
                    ${CMAKE_SOURCE_DIR}/shaders $<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders)
 
+add_custom_command(TARGET ${CMAKE_PROJECT_NAME} PRE_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E create_symlink
+                   ${CMAKE_SOURCE_DIR}/meshes $<TARGET_FILE_DIR:${PROJECT_NAME}>/meshes)
+
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
