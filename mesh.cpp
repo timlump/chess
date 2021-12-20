@@ -7,7 +7,7 @@
 
 namespace graphics
 {
-    std::vector<vertex> load_vertices(std::string path)
+    std::vector<vertex> load_vertices_raw(std::string path)
     {
         std::vector<vertex> result;
         std::ifstream file(path);
@@ -16,9 +16,9 @@ namespace graphics
             glm::vec3 pos = {};
             try {
                 while(not file.eof()) {
-                    char buffer[64] = {};
-                    file.getline(buffer, sizeof(buffer),' ');
-                    pos[count] = std::stof(buffer);
+                    std::string line = "";
+                    std::getline(file, line, ' ');
+                    pos[count] = std::stof(line);
                     count++;
                     if (count == 3) {
                         count = 0;
@@ -36,6 +36,154 @@ namespace graphics
             throw std::runtime_error("unable to load vertices");
         }
 
+        return result;
+    }
+
+    glm::vec2 to_vec2(std::string entry)
+    {
+        // string will look something like this
+        // 
+        // vt number1 number2
+        //   ^       ^
+        // first  second
+        glm::vec2 result;
+        auto first_space = entry.find(' ');
+        auto second_space = entry.find(' ', first_space + 1);
+
+        std::string x_str = entry.substr(first_space + 1, second_space - (first_space+1));
+        std::string y_str = entry.substr(second_space + 1, entry.size() - second_space);
+
+        result.x = std::stof(x_str);
+        result.y = std::stof(y_str);
+
+        return result;
+    }
+
+    glm::vec3 to_vec3(std::string entry)
+    {
+        // string will look something like this
+        //
+        // v number1 number2 number3
+        //  ^       ^       ^
+        // first  second  third
+        glm::vec3 result = {};
+        auto first_space = entry.find(' ');
+        auto second_space = entry.find(' ', first_space + 1);
+        auto third_space = entry.find(' ', second_space + 1);
+
+        std::string x_str = entry.substr(first_space + 1, second_space - (first_space + 1));
+        std::string y_str = entry.substr(second_space + 1, third_space - (second_space + 1));
+        std::string z_str = entry.substr(third_space + 1, entry.size() - third_space);
+
+        result.x = std::stof(x_str);
+        result.y = std::stof(y_str);
+        result.z = std::stof(z_str);
+
+        return result;
+    }
+
+    struct face_entry {
+        int vert_idx = {};
+        int uv_idx = {};
+        int normal_idx = {};
+    };
+
+    face_entry get_face(std::string entry)
+    {
+        // entry will look like number0/number1/number2
+        face_entry result;
+        auto first_slash = entry.find('/');
+        auto second_slash = entry.find('/', first_slash + 1);
+
+        std::string vert_idx_str = entry.substr(0,first_slash);
+        std::string uv_idx_str = entry.substr(first_slash + 1, second_slash - (first_slash + 1));
+        std::string normal_idx_str = entry.substr(second_slash + 1, entry.size() - second_slash);
+
+        if (not vert_idx_str.empty()) {
+            result.vert_idx = std::stoi(vert_idx_str) - 1;
+        }
+
+        if (not uv_idx_str.empty()) {
+            result.uv_idx = std::stoi(uv_idx_str) - 1;
+        }
+        
+        if (not normal_idx_str.empty()) {
+            result.normal_idx = std::stoi(normal_idx_str) - 1;
+        }
+        
+        return result;
+    }
+
+    std::vector<face_entry> get_faces(std::string entry)
+    {
+        std::vector<face_entry> result;
+
+        auto first_space = entry.find(' ');
+        auto second_space = entry.find(' ', first_space + 1);
+        auto third_space = entry.find(' ', second_space + 1);
+
+        std::string v0_str = entry.substr(first_space + 1, second_space - (first_space + 1));
+        std::string v1_str = entry.substr(second_space + 1, third_space - (second_space + 1));
+        std::string v2_str = entry.substr(third_space + 1, entry.size() - third_space);
+
+        result.push_back(get_face(v0_str));
+        result.push_back(get_face(v1_str));
+        result.push_back(get_face(v2_str));
+
+        return result;
+    }
+
+    std::vector<vertex> load_vertices_obj(std::string path)
+    {
+        std::vector<vertex> result;
+        std::ifstream file(path);
+        std::vector<glm::vec3> vertices;
+        std::vector<glm::vec2> uvs;
+        std::vector<glm::vec3> normals;
+
+        if (file.is_open()) {
+            while(not file.eof()) {
+                std::string line = "";
+                std::getline(file, line);
+                if (line.size() > 2) {
+                    switch(line[0]) {
+                        case 'v':
+                        {
+                            switch(line[1]) {
+                                case 't': {
+                                    uvs.push_back(to_vec2(line));
+                                } break;
+
+                                case 'n': {
+                                    normals.push_back(to_vec3(line));
+                                } break;
+
+                                default: {
+                                    vertices.push_back(to_vec3(line));
+                                } break;
+                            }
+                        } break;
+                        
+                        case 'f':
+                        {
+                            auto faces = get_faces(line);
+                            for (auto& face : faces) {
+                                vertex vert;
+                                vert.pos = vertices[face.vert_idx];
+                                if (not uvs.empty()) {
+                                    vert.uv = uvs[face.uv_idx];
+                                }
+                                result.push_back(vert);
+                            }
+                        } break;
+                        default:
+                            // not supported
+                            break;
+                    }
+                }
+            }
+            file.close();
+        }        
         return result;
     }
 

@@ -35,16 +35,19 @@ int main()
     gfx->m_view_mat = glm::lookAt(glm::vec3(1.2f, 1.2f, 1.2f), glm::vec3(0.f), glm::vec3(0.f,0.f,1.f));
     gfx->m_projection_mat = glm::perspective(glm::radians(45.f), width / (float)height, 1.f, 10.f);
     
-    std::shared_ptr<graphics::shader> board_shader;
-    {
-        board_shader = std::make_shared<graphics::shader>("shaders/checker.vert", "shaders/checker.frag");
-    }
+    auto board_shader = std::make_shared<graphics::shader>(
+        "shaders/checker.vert", "shaders/checker.frag"
+    );
     
     auto board = std::make_shared<graphics::mesh>(board_shader, gfx.get(), primitives::SQUARE);
     gfx->add_mesh(board);
 
-    auto piece = std::make_shared<graphics::mesh>(board_shader, gfx.get(), graphics::load_vertices("meshes/cylinder.raw"));
-    piece->m_model_mat = glm::scale(piece->m_model_mat, glm::vec3(0.05));
+    auto piece_shader = std::make_shared<graphics::shader>(
+        "shaders/piece.vert", "shaders/piece.frag"
+    );
+
+    auto piece = std::make_shared<graphics::mesh>(piece_shader, gfx.get(), graphics::load_vertices_obj("meshes/cube.obj"));
+    piece->m_model_mat = glm::scale(piece->m_model_mat, glm::vec3(0.1));
     gfx->add_mesh(piece);
 
     while(not glfwWindowShouldClose(window)) {

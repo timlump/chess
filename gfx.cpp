@@ -12,6 +12,8 @@ namespace graphics
         if (glewInit() != GLEW_OK) {
             throw std::runtime_error("unable to initialize glew");
         }
+
+        glEnable(GL_DEPTH_TEST);
     }
 
     gfx::~gfx() {
@@ -27,7 +29,7 @@ namespace graphics
         }
 
         glClearColor(m_clear_colour.r, m_clear_colour.g, m_clear_colour.b, 1.f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         for (auto& mesh : m_meshes) {
             mesh->draw();

@@ -15,7 +15,8 @@ namespace graphics
         glm::vec2 uv;
     };
 
-    std::vector<vertex> load_vertices(std::string path);
+    std::vector<vertex> load_vertices_raw(std::string path);
+    std::vector<vertex> load_vertices_obj(std::string path);
 
     class gfx;
     class mesh {
