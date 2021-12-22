@@ -14,7 +14,6 @@ namespace graphics
             void draw();
 
             void add_mesh(std::shared_ptr<mesh> mesh);
-
             void remove_mesh(std::shared_ptr<mesh> mesh);
 
             glm::mat4 m_view_mat = glm::mat4(1.f);

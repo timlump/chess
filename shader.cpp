@@ -24,8 +24,6 @@ namespace graphics
     }
 
     shader::shader(std::string vert_path, std::string frag_path) {
-        std::cout << "Shader created\n";
-
         m_vertex_shader = glCreateShader(GL_VERTEX_SHADER);
         m_fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
 
@@ -76,7 +74,9 @@ namespace graphics
     }
 
     shader::~shader() {
-        std::cout << "Shader destroyed\n";
+        glDeleteProgram(m_shader_program);
+        glDeleteShader(m_fragment_shader);
+        glDeleteShader(m_vertex_shader);
     }
 
     void shader::use()

@@ -188,7 +188,11 @@ namespace graphics
     }
 
     mesh::mesh(std::shared_ptr<shader> shader, gfx* graphics, std::vector<vertex> vertices) {
-        std::cout << "Mesh created\n";
+        // for use by an id buffer
+        static unsigned int current_id = 0;
+        m_id = current_id;
+        current_id++;
+
         m_shader = shader;
         m_gfx = graphics;
 
@@ -214,7 +218,8 @@ namespace graphics
 
     mesh::~mesh()
     {
-        std::cout << "Mesh destroyed\n";
+        glDeleteBuffers(1, &m_vbo);
+        glDeleteVertexArrays(1, &m_vao);
     }
 
     void mesh::draw()

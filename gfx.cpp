@@ -17,7 +17,7 @@ namespace graphics
     }
 
     gfx::~gfx() {
-
+        m_meshes.clear();
     }
 
     void gfx::draw() {

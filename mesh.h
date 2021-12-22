@@ -31,6 +31,7 @@ namespace graphics
             glm::mat4 m_model_mat = glm::mat4(1.f);
 
         private:
+            unsigned int m_id;
             gfx* m_gfx;
             std::shared_ptr<shader> m_shader;
             int m_num_vertices;
