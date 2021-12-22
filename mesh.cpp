@@ -222,8 +222,28 @@ namespace graphics
         glDeleteVertexArrays(1, &m_vao);
     }
 
+    void mesh::scale(glm::vec3 value)
+    {
+        m_model_mat = glm::scale(m_model_mat, value);
+    }
+
+    void mesh::translate(glm::vec3 value)
+    {
+        m_model_mat = glm::translate(m_model_mat, value);
+    }
+
+    void mesh::rotate(float degrees, glm::vec3 axis)
+    {
+        m_model_mat = glm::rotate(m_model_mat, glm::radians(degrees), axis);
+    }
+
     void mesh::draw()
     {
+        if (on_stencil) {
+            glEnable(GL_STENCIL_TEST);
+            on_stencil();
+        }
+
         m_shader->use();
         glBindVertexArray(m_vao);
         GLint model_uniform = glGetUniformLocation(m_shader->m_shader_program, "model");
@@ -236,5 +256,7 @@ namespace graphics
         glUniformMatrix4fv(proj_uniform, 1, GL_FALSE, glm::value_ptr(m_gfx->m_projection_mat));
 
         glDrawArrays(GL_TRIANGLES, 0, m_num_vertices);
+
+        glDisable(GL_STENCIL_TEST);
     }
 }

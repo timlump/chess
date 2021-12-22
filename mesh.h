@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <vector>
+#include <functional>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -25,7 +26,12 @@ namespace graphics
 
             ~mesh();
 
+            void scale(glm::vec3 value);
+            void translate(glm::vec3 value);
+            void rotate(float degrees, glm::vec3 axis);
+
             void draw();
+            std::function<void()> on_stencil = nullptr;
 
             // glm doesn't actually default matrices to identity
             glm::mat4 m_model_mat = glm::mat4(1.f);

@@ -32,7 +32,7 @@ int main()
     glfwSetKeyCallback(window, key_callback);
 
     std::shared_ptr<graphics::gfx> gfx = std::make_shared<graphics::gfx>();
-    gfx->m_view_mat = glm::lookAt(glm::vec3(1.2f, 1.2f, 1.2f), glm::vec3(0.f), glm::vec3(0.f,0.f,1.f));
+    gfx->m_view_mat = glm::lookAt(glm::vec3(1.2f, 1.2f, 1.2f), glm::vec3(0.f), glm::vec3(0.f,1.f,0.f));
     gfx->m_projection_mat = glm::perspective(glm::radians(45.f), width / (float)height, 1.f, 10.f);
     
     auto board_shader = std::make_shared<graphics::shader>(
@@ -40,15 +40,34 @@ int main()
     );
     
     auto board = std::make_shared<graphics::mesh>(board_shader, gfx.get(), primitives::SQUARE);
-    gfx->add_mesh(board);
+    board->on_stencil = [](){
+        glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+        glStencilMask(0xFF);
+        glDepthMask(GL_FALSE);
+        glClear(GL_STENCIL_BUFFER_BIT);
+    };
+    gfx->add_mesh(board,graphics::render_order::reflector);
 
     auto piece_shader = std::make_shared<graphics::shader>(
         "shaders/piece.vert", "shaders/piece.frag"
     );
 
-    auto piece = std::make_shared<graphics::mesh>(piece_shader, gfx.get(), graphics::load_vertices_obj("meshes/cube.obj"));
-    piece->m_model_mat = glm::scale(piece->m_model_mat, glm::vec3(0.1));
+    auto cube_vertices = graphics::load_vertices_obj("meshes/cube.obj");
+    auto piece = std::make_shared<graphics::mesh>(piece_shader, gfx.get(), cube_vertices);
+    piece->scale(glm::vec3(0.1, 0.1, 0.1));
+    piece->translate(glm::vec3(0,5,0));
     gfx->add_mesh(piece);
+
+    auto reflected_piece = std::make_shared<graphics::mesh>(piece_shader, gfx.get(), cube_vertices);
+    reflected_piece->scale(glm::vec3(0.1, -0.1, 0.1));
+    reflected_piece->translate(glm::vec3(0,5,0));
+    reflected_piece->on_stencil = [](){
+        glStencilFunc(GL_EQUAL, 1, 0xFF);
+        glStencilMask(0x00);
+        glDepthMask(GL_TRUE);
+    };
+    gfx->add_mesh(reflected_piece, graphics::render_order::reflected);
 
     while(not glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -57,7 +76,7 @@ int main()
         }
 
         // game logic here
-        board->m_model_mat = glm::rotate(board->m_model_mat, glm::radians(1.f), glm::vec3(0,0,1));
+        board->rotate(1.f, glm::vec3(0,1,0));
 
         gfx->draw();
         glfwSwapBuffers(window);

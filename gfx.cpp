@@ -32,18 +32,11 @@ namespace graphics
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         for (auto& mesh : m_meshes) {
-            mesh->draw();
+            mesh.second->draw();
         }
     }
 
-    void gfx::add_mesh(std::shared_ptr<mesh> mesh) {
-        m_meshes.push_back(mesh);
-    }
-
-    void gfx::remove_mesh(std::shared_ptr<mesh> mesh) {
-        auto find_iter = std::find(m_meshes.begin(), m_meshes.end(), mesh);
-        if (find_iter != m_meshes.end()) {
-            m_meshes.erase(find_iter);
-        }
+    void gfx::add_mesh(std::shared_ptr<mesh> mesh, int order) {
+        m_meshes.insert(std::make_pair(order, mesh));
     }
 }
