@@ -239,9 +239,8 @@ namespace graphics
 
     void mesh::draw()
     {
-        if (on_stencil) {
-            glEnable(GL_STENCIL_TEST);
-            on_stencil();
+        if (on_begin_draw) {
+            on_begin_draw();
         }
 
         m_shader->use();
@@ -257,6 +256,8 @@ namespace graphics
 
         glDrawArrays(GL_TRIANGLES, 0, m_num_vertices);
 
-        glDisable(GL_STENCIL_TEST);
+        if (on_finish_draw) {
+            on_finish_draw();
+        }
     }
 }

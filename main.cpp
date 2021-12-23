@@ -40,12 +40,16 @@ int main()
     );
     
     auto board = std::make_shared<graphics::mesh>(board_shader, gfx.get(), primitives::SQUARE);
-    board->on_stencil = [](){
+    board->on_begin_draw = [](){
+        glEnable(GL_STENCIL_TEST);
         glStencilFunc(GL_ALWAYS, 1, 0xFF);
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
         glStencilMask(0xFF);
         glDepthMask(GL_FALSE);
         glClear(GL_STENCIL_BUFFER_BIT);
+    };
+    board->on_finish_draw = [](){
+        glDisable(GL_STENCIL_TEST);
     };
     gfx->add_mesh(board,graphics::render_order::reflector);
 
@@ -62,11 +66,26 @@ int main()
     auto reflected_piece = std::make_shared<graphics::mesh>(piece_shader, gfx.get(), cube_vertices);
     reflected_piece->scale(glm::vec3(0.1, -0.1, 0.1));
     reflected_piece->translate(glm::vec3(0,5,0));
-    reflected_piece->on_stencil = [](){
+    reflected_piece->on_begin_draw = [](){
+        glEnable(GL_STENCIL_TEST);
+        glEnable(GL_BLEND);
+
         glStencilFunc(GL_EQUAL, 1, 0xFF);
         glStencilMask(0x00);
         glDepthMask(GL_TRUE);
+
+        glBlendEquation(GL_ADD);
+        glBlendColor(1.f, 1.f, 1.f, 0.5f);
+        glBlendFunc(GL_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_ALPHA);
+
+        glFrontFace(GL_CW);
     };
+    reflected_piece->on_finish_draw = [](){
+        glDisable(GL_BLEND);
+        glDisable(GL_STENCIL_TEST);
+        glFrontFace(GL_CCW);
+    };
+
     gfx->add_mesh(reflected_piece, graphics::render_order::reflected);
 
     while(not glfwWindowShouldClose(window)) {
@@ -77,6 +96,8 @@ int main()
 
         // game logic here
         board->rotate(1.f, glm::vec3(0,1,0));
+        piece->translate(glm::vec3(0,-0.004f, 0));
+        reflected_piece->translate(glm::vec3(0,-0.004f, 0));
 
         gfx->draw();
         glfwSwapBuffers(window);

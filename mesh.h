@@ -31,7 +31,8 @@ namespace graphics
             void rotate(float degrees, glm::vec3 axis);
 
             void draw();
-            std::function<void()> on_stencil = nullptr;
+            std::function<void()> on_begin_draw = nullptr;
+            std::function<void()> on_finish_draw = nullptr;
 
             // glm doesn't actually default matrices to identity
             glm::mat4 m_model_mat = glm::mat4(1.f);
