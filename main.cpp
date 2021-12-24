@@ -8,8 +8,46 @@ void error_callback(int error, const char * description)
     std::cerr << description << std::endl;
 }
 
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int modes)
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+}
+
+struct
+{
+    double x = 0;
+    double y = 0;
+    
+    bool left_button = false;
+    bool right_button = false;
+    bool middle_button = false;
+
+} mouse_state;
+
+void mouse_pos_callback(GLFWwindow* window, double x, double y)
+{
+    mouse_state.x = x;
+    mouse_state.y = y;
+}
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+    switch(button)
+    {
+        case GLFW_MOUSE_BUTTON_LEFT:
+        {
+            mouse_state.left_button = (action == GLFW_PRESS);
+        } break;
+
+        case GLFW_MOUSE_BUTTON_RIGHT:
+        {
+            mouse_state.right_button = (action == GLFW_PRESS);
+        } break;
+
+        case GLFW_MOUSE_BUTTON_MIDDLE:
+        {
+            mouse_state.middle_button = (action == GLFW_PRESS);
+        } break;
+    }
 }
 
 int main()
@@ -30,6 +68,8 @@ int main()
 
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, key_callback);
+    glfwSetCursorPosCallback(window, mouse_pos_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
 
     std::shared_ptr<graphics::gfx> gfx = std::make_shared<graphics::gfx>();
     gfx->m_view_mat = glm::lookAt(glm::vec3(1.2f, 1.2f, 1.2f), glm::vec3(0.f), glm::vec3(0.f,1.f,0.f));
@@ -39,7 +79,8 @@ int main()
         "shaders/checker.vert", "shaders/checker.frag"
     );
     
-    auto board = std::make_shared<graphics::mesh>(board_shader, gfx.get(), primitives::SQUARE);
+    auto board = std::make_shared<graphics::mesh>(gfx.get(), primitives::SQUARE);
+    board->add_shader(board_shader);
     board->on_begin_draw = [](){
         glEnable(GL_STENCIL_TEST);
         glStencilFunc(GL_ALWAYS, 1, 0xFF);
@@ -62,12 +103,14 @@ int main()
     );
 
     auto cube_vertices = graphics::load_vertices_obj("meshes/pawn.obj");
-    auto piece = std::make_shared<graphics::mesh>(piece_shader, gfx.get(), cube_vertices);
+    auto piece = std::make_shared<graphics::mesh>(gfx.get(), cube_vertices);
+    piece->add_shader(piece_shader);
     piece->scale(glm::vec3(0.1, 0.1, 0.1));
     piece->translate(glm::vec3(0,5,0));
     gfx->add_mesh(piece);
 
-    auto reflected_piece = std::make_shared<graphics::mesh>(reflected_piece_shader, gfx.get(), cube_vertices);
+    auto reflected_piece = std::make_shared<graphics::mesh>(gfx.get(), cube_vertices);
+    reflected_piece->add_shader(reflected_piece_shader);
     reflected_piece->scale(glm::vec3(0.1, -0.1, 0.1));
     reflected_piece->translate(glm::vec3(0,5,0));
     reflected_piece->on_begin_draw = [](){
@@ -101,6 +144,9 @@ int main()
         piece->translate(glm::vec3(0,-0.004f, 0));
         reflected_piece->translate(glm::vec3(0,-0.004f, 0));
 
+        if (mouse_state.left_button) {
+            // todo
+        }
         gfx->draw();
         glfwSwapBuffers(window);
     }

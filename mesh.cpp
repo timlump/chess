@@ -158,13 +158,12 @@ namespace graphics
         return result;
     }
 
-    mesh::mesh(std::shared_ptr<shader> shader, gfx* graphics, std::vector<vertex> vertices) {
+    mesh::mesh(gfx* graphics, std::vector<vertex> vertices) {
         // for use by an id buffer
         static unsigned int current_id = 0;
         m_id = current_id;
         current_id++;
 
-        m_shader = shader;
         m_gfx = graphics;
 
         m_num_vertices = vertices.size();
@@ -175,14 +174,17 @@ namespace graphics
         glGenBuffers(1, &m_vbo);
         glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertex)*vertices.size(), vertices.data(), GL_STATIC_DRAW);
-
-        refresh();
     }
 
     mesh::~mesh()
     {
         glDeleteBuffers(1, &m_vbo);
         glDeleteVertexArrays(1, &m_vao);
+    }
+
+    void mesh::add_shader(std::shared_ptr<shader> shader, int layer)
+    {
+        m_shaders_layers[layer] = shader;
     }
 
     void mesh::scale(glm::vec3 value)
@@ -204,11 +206,12 @@ namespace graphics
     {
         glBindVertexArray(m_vao);
         glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-        m_shader->use();
+        auto shader = m_shaders_layers[m_current_shader];
+        shader->use();
         {
-            GLint pos_attrib = glGetAttribLocation(m_shader->m_shader_program, "position");
-            GLint uv_attrib = glGetAttribLocation(m_shader->m_shader_program, "uv");
-            GLint normal_attrib = glGetAttribLocation(m_shader->m_shader_program, "normal");
+            GLint pos_attrib = glGetAttribLocation(shader->m_shader_program, "position");
+            GLint uv_attrib = glGetAttribLocation(shader->m_shader_program, "uv");
+            GLint normal_attrib = glGetAttribLocation(shader->m_shader_program, "normal");
 
             if (pos_attrib != -1) {
                 glEnableVertexAttribArray(pos_attrib);
@@ -229,22 +232,33 @@ namespace graphics
         }
     }
 
-    void mesh::draw()
+    void mesh::draw(int layer)
     {
-        glBindVertexArray(m_vao);
-        m_shader->use();
+        if (m_shaders_layers.empty()) {
+            std::cerr << "Mesh has not shaders\n";
+            return;
+        }
+
+        auto shader = m_shaders_layers.find(layer);
+        if (shader == m_shaders_layers.end()) {
+            return;
+        }
+
+        refresh();
 
         if (on_begin_draw) {
             on_begin_draw();
         }
 
-        GLint model_uniform = glGetUniformLocation(m_shader->m_shader_program, "model");
+        auto shader_program = m_shaders_layers[layer]->m_shader_program;
+
+        GLint model_uniform = glGetUniformLocation(shader_program, "model");
         glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(m_model_mat));
 
-        GLint view_uniform = glGetUniformLocation(m_shader->m_shader_program, "view");
+        GLint view_uniform = glGetUniformLocation(shader_program, "view");
         glUniformMatrix4fv(view_uniform, 1, GL_FALSE, glm::value_ptr(m_gfx->m_view_mat));
 
-        GLint proj_uniform = glGetUniformLocation(m_shader->m_shader_program, "project");
+        GLint proj_uniform = glGetUniformLocation(shader_program, "project");
         glUniformMatrix4fv(proj_uniform, 1, GL_FALSE, glm::value_ptr(m_gfx->m_projection_mat));
 
         glDrawArrays(GL_TRIANGLES, 0, m_num_vertices);

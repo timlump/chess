@@ -2,6 +2,7 @@
 #include "shader.h"
 
 #include <memory>
+#include <map>
 #include <vector>
 #include <functional>
 
@@ -22,16 +23,19 @@ namespace graphics
     class gfx;
     class mesh {
         public:
-            mesh(std::shared_ptr<shader> shader, gfx* graphics, std::vector<vertex> vertices);
+            mesh(gfx* graphics, std::vector<vertex> vertices);
 
             ~mesh();
+
+            void add_shader(std::shared_ptr<shader> shader, int layer = 0);
 
             void scale(glm::vec3 value);
             void translate(glm::vec3 value);
             void rotate(float degrees, glm::vec3 axis);
 
             void refresh();
-            void draw();
+            void draw(int layer = 0);
+            
             std::function<void()> on_begin_draw = nullptr;
             std::function<void()> on_finish_draw = nullptr;
 
@@ -41,7 +45,8 @@ namespace graphics
         private:
             unsigned int m_id;
             gfx* m_gfx;
-            std::shared_ptr<shader> m_shader;
+            int m_current_shader = 0;
+            std::map<int,std::shared_ptr<shader>> m_shaders_layers;
             int m_num_vertices;
             GLuint m_vbo;
             GLuint m_vao;
