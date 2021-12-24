@@ -13,10 +13,10 @@ namespace graphics
     struct vertex
     {
         glm::vec3 pos;
+        glm::vec3 normal;
         glm::vec2 uv;
     };
 
-    std::vector<vertex> load_vertices_raw(std::string path);
     std::vector<vertex> load_vertices_obj(std::string path);
 
     class gfx;
@@ -30,6 +30,7 @@ namespace graphics
             void translate(glm::vec3 value);
             void rotate(float degrees, glm::vec3 axis);
 
+            void refresh();
             void draw();
             std::function<void()> on_begin_draw = nullptr;
             std::function<void()> on_finish_draw = nullptr;

@@ -5,5 +5,5 @@ out mediump vec4 out_colour;
 
 void main()
 {   
-    out_colour = vec4(normal_interp, 1.0);
+    out_colour = vec4(normal_interp, 0.5);
 }

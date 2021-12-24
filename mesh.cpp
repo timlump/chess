@@ -7,38 +7,6 @@
 
 namespace graphics
 {
-    std::vector<vertex> load_vertices_raw(std::string path)
-    {
-        std::vector<vertex> result;
-        std::ifstream file(path);
-        if (file.is_open()) {
-            int count = 0;
-            glm::vec3 pos = {};
-            try {
-                while(not file.eof()) {
-                    std::string line = "";
-                    std::getline(file, line, ' ');
-                    pos[count] = std::stof(line);
-                    count++;
-                    if (count == 3) {
-                        count = 0;
-                        vertex v = {pos,glm::vec2(0)};
-                        result.push_back(v);
-                    }
-                }
-            }
-            catch (std::invalid_argument& e) {
-                // do nothing - its hit the end line
-            }
-            file.close();
-        }
-        else {
-            throw std::runtime_error("unable to load vertices");
-        }
-
-        return result;
-    }
-
     glm::vec2 to_vec2(std::string entry)
     {
         // string will look something like this
@@ -173,6 +141,9 @@ namespace graphics
                                 if (not uvs.empty()) {
                                     vert.uv = uvs[face.uv_idx];
                                 }
+                                if (not normals.empty()) {
+                                    vert.normal = normals[face.normal_idx];
+                                }
                                 result.push_back(vert);
                             }
                         } break;
@@ -205,15 +176,7 @@ namespace graphics
         glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertex)*vertices.size(), vertices.data(), GL_STATIC_DRAW);
 
-        shader->use();
-
-        GLint pos_attrib = glGetAttribLocation(shader->m_shader_program, "position");
-        glEnableVertexAttribArray(pos_attrib);
-        GLint uv_attrib = glGetAttribLocation(shader->m_shader_program, "uv");
-        glEnableVertexAttribArray(uv_attrib);
-
-        glVertexAttribPointer(pos_attrib, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), 0);
-        glVertexAttribPointer(uv_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)sizeof(vertex::pos));
+        refresh();
     }
 
     mesh::~mesh()
@@ -237,14 +200,44 @@ namespace graphics
         m_model_mat = glm::rotate(m_model_mat, glm::radians(degrees), axis);
     }
 
+    void mesh::refresh()
+    {
+        glBindVertexArray(m_vao);
+        glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+        m_shader->use();
+        {
+            GLint pos_attrib = glGetAttribLocation(m_shader->m_shader_program, "position");
+            GLint uv_attrib = glGetAttribLocation(m_shader->m_shader_program, "uv");
+            GLint normal_attrib = glGetAttribLocation(m_shader->m_shader_program, "normal");
+
+            if (pos_attrib != -1) {
+                glEnableVertexAttribArray(pos_attrib);
+                glVertexAttribPointer(pos_attrib, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), 0);
+            }
+            
+            if (normal_attrib != -1) {
+                glEnableVertexAttribArray(normal_attrib);
+                glVertexAttribPointer(normal_attrib, 3, GL_FLOAT, GL_FALSE, sizeof(vertex),
+                    (void*)sizeof(vertex::pos));
+            }
+
+            if (uv_attrib != -1) {
+                glEnableVertexAttribArray(uv_attrib);
+                glVertexAttribPointer(uv_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vertex),
+                    (void*)(sizeof(vertex::pos) + sizeof(vertex::normal)));
+            }
+        }
+    }
+
     void mesh::draw()
     {
+        glBindVertexArray(m_vao);
+        m_shader->use();
+
         if (on_begin_draw) {
             on_begin_draw();
         }
 
-        m_shader->use();
-        glBindVertexArray(m_vao);
         GLint model_uniform = glGetUniformLocation(m_shader->m_shader_program, "model");
         glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(m_model_mat));
 

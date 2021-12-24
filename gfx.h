@@ -27,6 +27,7 @@ namespace graphics
             glm::mat4 m_view_mat = glm::mat4(1.f);
             glm::mat4 m_projection_mat = glm::mat4(1.f);
             glm::vec3 m_clear_colour = glm::vec3(0.39f, 0.58f, 0.93f);
+            glm::vec3 m_light_pos = glm::vec3(10);
 
         private:
             std::multimap<int,std::shared_ptr<mesh>> m_meshes;

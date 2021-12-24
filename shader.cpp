@@ -1,4 +1,5 @@
 #include "shader.h"
+#include "mesh.h"
 #include <iostream>
 #include <stdexcept>
 #include <fstream>

@@ -57,13 +57,17 @@ int main()
         "shaders/piece.vert", "shaders/piece.frag"
     );
 
-    auto cube_vertices = graphics::load_vertices_obj("meshes/cube.obj");
+    auto reflected_piece_shader = std::make_shared<graphics::shader>(
+        "shaders/piece_reflected.vert", "shaders/piece_reflected.frag"
+    );
+
+    auto cube_vertices = graphics::load_vertices_obj("meshes/pawn.obj");
     auto piece = std::make_shared<graphics::mesh>(piece_shader, gfx.get(), cube_vertices);
     piece->scale(glm::vec3(0.1, 0.1, 0.1));
     piece->translate(glm::vec3(0,5,0));
     gfx->add_mesh(piece);
 
-    auto reflected_piece = std::make_shared<graphics::mesh>(piece_shader, gfx.get(), cube_vertices);
+    auto reflected_piece = std::make_shared<graphics::mesh>(reflected_piece_shader, gfx.get(), cube_vertices);
     reflected_piece->scale(glm::vec3(0.1, -0.1, 0.1));
     reflected_piece->translate(glm::vec3(0,5,0));
     reflected_piece->on_begin_draw = [](){
@@ -74,9 +78,7 @@ int main()
         glStencilMask(0x00);
         glDepthMask(GL_TRUE);
 
-        glBlendEquation(GL_ADD);
-        glBlendColor(1.f, 1.f, 1.f, 0.5f);
-        glBlendFunc(GL_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_ALPHA);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         glFrontFace(GL_CW);
     };
