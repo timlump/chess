@@ -1,6 +1,7 @@
 #include "chess.h"
 #include "gfx.h"
 #include "primitives.h"
+#include <glm/gtc/type_ptr.hpp>
 
 void error_callback(int error, const char * description)
 {
@@ -71,7 +72,7 @@ int main()
     glfwSetCursorPosCallback(window, mouse_pos_callback);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
 
-    std::shared_ptr<graphics::gfx> gfx = std::make_shared<graphics::gfx>();
+    std::shared_ptr<graphics::gfx> gfx = std::make_shared<graphics::gfx>(width,height);
     gfx->m_view_mat = glm::lookAt(glm::vec3(1.2f, 1.2f, 1.2f), glm::vec3(0.f), glm::vec3(0.f,1.f,0.f));
     gfx->m_projection_mat = glm::perspective(glm::radians(45.f), width / (float)height, 1.f, 10.f);
     
@@ -94,6 +95,10 @@ int main()
     };
     gfx->add_mesh(board,graphics::render_order::reflector);
 
+    auto id_shader = std::make_shared<graphics::shader>(
+        "shaders/id.vert", "shaders/id.frag"
+    );
+
     auto piece_shader = std::make_shared<graphics::shader>(
         "shaders/piece.vert", "shaders/piece.frag"
     );
@@ -104,7 +109,8 @@ int main()
 
     auto cube_vertices = graphics::load_vertices_obj("meshes/pawn.obj");
     auto piece = std::make_shared<graphics::mesh>(gfx.get(), cube_vertices);
-    piece->add_shader(piece_shader);
+    piece->add_shader(piece_shader, 0);
+    piece->add_shader(id_shader, 1);
     piece->scale(glm::vec3(0.1, 0.1, 0.1));
     piece->translate(glm::vec3(0,5,0));
     gfx->add_mesh(piece);
@@ -144,10 +150,20 @@ int main()
         piece->translate(glm::vec3(0,-0.004f, 0));
         reflected_piece->translate(glm::vec3(0,-0.004f, 0));
 
+        // mouse picking
         if (mouse_state.left_button) {
-            // todo
+            gfx->draw(1, true);
+            uint8_t colour[3] = {};
+            glReadPixels(
+                static_cast<GLint>(mouse_state.x),
+                height - static_cast<GLint>(mouse_state.y),
+                1, 1, GL_RGB, GL_UNSIGNED_BYTE, colour
+            );
         }
+
+        // regular drawing
         gfx->draw();
+        
         glfwSwapBuffers(window);
     }
 

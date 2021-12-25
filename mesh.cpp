@@ -244,13 +244,15 @@ namespace graphics
             return;
         }
 
+        m_current_shader = layer;
+
         refresh();
 
         if (on_begin_draw) {
             on_begin_draw();
         }
 
-        auto shader_program = m_shaders_layers[layer]->m_shader_program;
+        auto shader_program = m_shaders_layers[m_current_shader]->m_shader_program;
 
         GLint model_uniform = glGetUniformLocation(shader_program, "model");
         glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(m_model_mat));
