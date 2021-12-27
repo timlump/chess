@@ -25,12 +25,36 @@ namespace graphics
     }
 
     shader::shader(std::string vert_path, std::string frag_path) {
+        // needed for reloading
+        m_vert_path = vert_path;
+        m_frag_path = frag_path;
+
+        load();
+    }
+
+    shader::~shader() {
+        release();
+    }
+
+    void shader::reload()
+    {
+        release();
+        load();
+    }
+
+    void shader::use()
+    {
+        glUseProgram(m_shader_program);
+    }
+
+    void shader::load()
+    {
         m_vertex_shader = glCreateShader(GL_VERTEX_SHADER);
         m_fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
 
         {
-            std::string vert_source = readfile(vert_path);
-            std::string frag_source = readfile(frag_path);
+            std::string vert_source = readfile(m_vert_path);
+            std::string frag_source = readfile(m_frag_path);
             
             auto vert_source_c = vert_source.c_str();
             auto frag_source_c = frag_source.c_str();
@@ -64,7 +88,7 @@ namespace graphics
         }
 
         if (not successful_compile) {
-            throw std::runtime_error("Unable to compile shader");
+            std::cerr << "Unable to compile shader\n";
         }
 
         m_shader_program = glCreateProgram();
@@ -74,14 +98,10 @@ namespace graphics
         glUseProgram(m_shader_program);
     }
 
-    shader::~shader() {
+    void shader::release()
+    {
         glDeleteProgram(m_shader_program);
         glDeleteShader(m_fragment_shader);
         glDeleteShader(m_vertex_shader);
-    }
-
-    void shader::use()
-    {
-        glUseProgram(m_shader_program);
     }
 }

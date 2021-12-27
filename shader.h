@@ -19,7 +19,10 @@ namespace graphics
         GLuint m_shader_program;
         std::string m_vert_path;
         std::string m_frag_path;
+
     private:
+        void load();
+        void release();
         GLuint m_vertex_shader;
         GLuint m_fragment_shader;
     };

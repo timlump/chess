@@ -3,20 +3,18 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 
-void error_callback(int error, const char * description)
-{
-    std::cerr << "Error: " << error << std::endl;
-    std::cerr << description << std::endl;
-}
+// callbacks
+void error_callback(int error, const char * description);
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+void mouse_pos_callback(GLFWwindow* window, double x, double y);
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
+// state
 struct
 {
     float fov = 45.f;
 } camera_state;
-
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-}
 
 struct
 {
@@ -28,38 +26,6 @@ struct
     bool middle_button = false;
 
 } mouse_state;
-
-void mouse_pos_callback(GLFWwindow* window, double x, double y)
-{
-    mouse_state.x = x;
-    mouse_state.y = y;
-}
-
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
-{
-    switch(button)
-    {
-        case GLFW_MOUSE_BUTTON_LEFT:
-        {
-            mouse_state.left_button = (action == GLFW_PRESS);
-        } break;
-
-        case GLFW_MOUSE_BUTTON_RIGHT:
-        {
-            mouse_state.right_button = (action == GLFW_PRESS);
-        } break;
-
-        case GLFW_MOUSE_BUTTON_MIDDLE:
-        {
-            mouse_state.middle_button = (action == GLFW_PRESS);
-        } break;
-    }
-}
-
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{
-    camera_state.fov -= yoffset;
-}
 
 std::map<std::string, std::shared_ptr<graphics::shader>> g_shaders;
 void load_shaders()
@@ -79,6 +45,12 @@ void load_shaders()
     g_shaders["reflected_piece"] = std::make_shared<graphics::shader>(
         "shaders/piece_reflected.vert", "shaders/piece_reflected.frag"
     );
+}
+void reload_shaders()
+{
+    for (auto& shader : g_shaders) {
+        shader.second->reload();
+    }
 }
 
 std::map<std::string, std::shared_ptr<graphics::mesh>> g_meshes;
@@ -230,4 +202,52 @@ int main()
     glfwTerminate();
 
     return 0;
+}
+
+void error_callback(int error, const char * description)
+{
+    std::cerr << "Error: " << error << std::endl;
+    std::cerr << description << std::endl;
+}
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    switch (key) {
+        case GLFW_KEY_R:
+        {
+            reload_shaders();
+        } break;
+    }
+}
+
+void mouse_pos_callback(GLFWwindow* window, double x, double y)
+{
+    mouse_state.x = x;
+    mouse_state.y = y;
+}
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+    switch(button)
+    {
+        case GLFW_MOUSE_BUTTON_LEFT:
+        {
+            mouse_state.left_button = (action == GLFW_PRESS);
+        } break;
+
+        case GLFW_MOUSE_BUTTON_RIGHT:
+        {
+            mouse_state.right_button = (action == GLFW_PRESS);
+        } break;
+
+        case GLFW_MOUSE_BUTTON_MIDDLE:
+        {
+            mouse_state.middle_button = (action == GLFW_PRESS);
+        } break;
+    }
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    camera_state.fov -= yoffset;
 }
