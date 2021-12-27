@@ -158,14 +158,7 @@ namespace graphics
         return result;
     }
 
-    mesh::mesh(gfx* graphics, std::vector<vertex> vertices) {
-        // for use by an id buffer
-        static unsigned int current_id = 0;
-        m_id = current_id;
-        current_id++;
-
-        m_gfx = graphics;
-
+    mesh::mesh(std::vector<vertex> vertices) {
         m_num_vertices = vertices.size();
 
         glGenVertexArrays(1, &m_vao);
@@ -182,31 +175,15 @@ namespace graphics
         glDeleteVertexArrays(1, &m_vao);
     }
 
-    void mesh::add_shader(std::shared_ptr<shader> shader, int layer)
+    void mesh::draw()
     {
-        m_shaders_layers[layer] = shader;
+        glDrawArrays(GL_TRIANGLES, 0, m_num_vertices);
     }
 
-    void mesh::scale(glm::vec3 value)
-    {
-        m_model_mat = glm::scale(m_model_mat, value);
-    }
-
-    void mesh::translate(glm::vec3 value)
-    {
-        m_model_mat = glm::translate(m_model_mat, value);
-    }
-
-    void mesh::rotate(float degrees, glm::vec3 axis)
-    {
-        m_model_mat = glm::rotate(m_model_mat, glm::radians(degrees), axis);
-    }
-
-    void mesh::refresh()
+    void mesh::refresh(std::shared_ptr<shader> shader)
     {
         glBindVertexArray(m_vao);
         glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-        auto shader = m_shaders_layers[m_current_shader];
         shader->use();
         {
             GLint pos_attrib = glGetAttribLocation(shader->m_shader_program, "position");
@@ -232,7 +209,35 @@ namespace graphics
         }
     }
 
-    void mesh::draw(int layer)
+    mesh_instance::mesh_instance()
+    {
+         // for use by an id buffer
+        static unsigned int current_id = 0;
+        m_id = current_id;
+        current_id++;
+    }
+
+    void mesh_instance::add_shader(std::shared_ptr<shader> shader, int layer)
+    {
+        m_shaders_layers[layer] = shader;
+    }
+
+    void mesh_instance::scale(glm::vec3 value)
+    {
+        m_model_mat = glm::scale(m_model_mat, value);
+    }
+
+    void mesh_instance::translate(glm::vec3 value)
+    {
+        m_model_mat = glm::translate(m_model_mat, value);
+    }
+
+    void mesh_instance::rotate(float degrees, glm::vec3 axis)
+    {
+        m_model_mat = glm::rotate(m_model_mat, glm::radians(degrees), axis);
+    }
+
+    void mesh_instance::draw(int layer)
     {
         if (m_shaders_layers.empty()) {
             std::cerr << "Mesh has not shaders\n";
@@ -246,27 +251,31 @@ namespace graphics
 
         m_current_shader = layer;
 
-        refresh();
+        if (m_mesh) {
+            m_mesh->refresh(shader->second);
 
-        if (on_begin_draw) {
-            on_begin_draw();
-        }
+            if (on_begin_draw) {
+                on_begin_draw();
+            }
 
-        auto shader_program = m_shaders_layers[m_current_shader]->m_shader_program;
+            auto shader_program = shader->second->m_shader_program;
 
-        GLint model_uniform = glGetUniformLocation(shader_program, "model");
-        glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(m_model_mat));
+            GLint model_uniform = glGetUniformLocation(shader_program, "model");
+            glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(m_model_mat));
 
-        GLint view_uniform = glGetUniformLocation(shader_program, "view");
-        glUniformMatrix4fv(view_uniform, 1, GL_FALSE, glm::value_ptr(m_gfx->m_view_mat));
+            auto gfx = gfx::get();
 
-        GLint proj_uniform = glGetUniformLocation(shader_program, "project");
-        glUniformMatrix4fv(proj_uniform, 1, GL_FALSE, glm::value_ptr(m_gfx->m_projection_mat));
+            GLint view_uniform = glGetUniformLocation(shader_program, "view");
+            glUniformMatrix4fv(view_uniform, 1, GL_FALSE, glm::value_ptr(gfx->m_view_mat));
 
-        glDrawArrays(GL_TRIANGLES, 0, m_num_vertices);
+            GLint proj_uniform = glGetUniformLocation(shader_program, "project");
+            glUniformMatrix4fv(proj_uniform, 1, GL_FALSE, glm::value_ptr(gfx->m_projection_mat));
 
-        if (on_finish_draw) {
-            on_finish_draw();
+            m_mesh->draw();
+
+            if (on_finish_draw) {
+                on_finish_draw();
+            }
         }
     }
 }

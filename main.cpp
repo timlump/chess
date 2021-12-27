@@ -1,7 +1,7 @@
-#include "chess.h"
 #include "gfx.h"
 #include "primitives.h"
 #include <glm/gtc/type_ptr.hpp>
+#include <iostream>
 
 void error_callback(int error, const char * description)
 {
@@ -61,6 +61,74 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
     camera_state.fov -= yoffset;
 }
 
+std::map<std::string, std::shared_ptr<graphics::shader>> g_shaders;
+void load_shaders()
+{
+    g_shaders["id"] = std::make_shared<graphics::shader>(
+        "shaders/id.vert", "shaders/id.frag"
+    );
+
+    g_shaders["board"] = std::make_shared<graphics::shader>(
+        "shaders/checker.vert", "shaders/checker.frag"
+    );
+
+    g_shaders["piece"] = std::make_shared<graphics::shader>(
+        "shaders/piece.vert", "shaders/piece.frag"
+    );
+
+    g_shaders["reflected_piece"] = std::make_shared<graphics::shader>(
+        "shaders/piece_reflected.vert", "shaders/piece_reflected.frag"
+    );
+}
+
+std::map<std::string, std::shared_ptr<graphics::mesh>> g_meshes;
+void load_meshes()
+{
+    g_meshes["board"] = std::make_shared<graphics::mesh>(
+        primitives::SQUARE
+    );
+
+    g_meshes["pawn"] = std::make_shared<graphics::mesh>(
+        graphics::load_vertices_obj("meshes/pawn.obj")
+    );
+}
+
+void setup_reflector()
+{
+    glEnable(GL_STENCIL_TEST);
+    glStencilFunc(GL_ALWAYS, 1, 0xFF);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+    glStencilMask(0xFF);
+    glDepthMask(GL_FALSE);
+    glClear(GL_STENCIL_BUFFER_BIT);
+}
+
+void cleanup_reflector()
+{
+    glDisable(GL_STENCIL_TEST);
+}
+
+void setup_reflected()
+{
+    glEnable(GL_STENCIL_TEST);
+    glEnable(GL_BLEND);
+
+    glStencilFunc(GL_EQUAL, 1, 0xFF);
+    glStencilMask(0x00);
+    glDepthMask(GL_TRUE);
+
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glFrontFace(GL_CW);
+}
+
+void cleanup_reflected()
+{
+    glDisable(GL_BLEND);
+    glDisable(GL_STENCIL_TEST);
+    glFrontFace(GL_CCW);
+}
+
 int main()
 {
     int width = 640;
@@ -83,69 +151,44 @@ int main()
     glfwSetMouseButtonCallback(window, mouse_button_callback);
     glfwSetScrollCallback(window, scroll_callback);
 
-    std::shared_ptr<graphics::gfx> gfx = std::make_shared<graphics::gfx>(width,height);
+    graphics::gfx::create(width,height);
+    auto gfx = graphics::gfx::get();
+
+    load_shaders();
+    load_meshes();
+
     gfx->m_view_mat = glm::lookAt(glm::vec3(1.2f, 1.2f, 1.2f), glm::vec3(0.f), glm::vec3(0.f,1.f,0.f));
     
-    auto board_shader = std::make_shared<graphics::shader>(
-        "shaders/checker.vert", "shaders/checker.frag"
-    );
-    
-    auto board = std::make_shared<graphics::mesh>(gfx.get(), primitives::SQUARE);
-    board->add_shader(board_shader);
-    board->on_begin_draw = [](){
-        glEnable(GL_STENCIL_TEST);
-        glStencilFunc(GL_ALWAYS, 1, 0xFF);
-        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-        glStencilMask(0xFF);
-        glDepthMask(GL_FALSE);
-        glClear(GL_STENCIL_BUFFER_BIT);
-    };
-    board->on_finish_draw = [](){
-        glDisable(GL_STENCIL_TEST);
-    };
+    auto board = std::make_shared<graphics::mesh_instance>();
+    {
+        board->m_mesh = g_meshes["board"];
+        board->add_shader(g_shaders["board"]);
+        board->on_begin_draw = setup_reflector;
+        board->on_finish_draw = cleanup_reflector;
+    }
+
     gfx->add_mesh(board,graphics::render_order::reflector);
 
-    auto id_shader = std::make_shared<graphics::shader>(
-        "shaders/id.vert", "shaders/id.frag"
-    );
-
-    auto piece_shader = std::make_shared<graphics::shader>(
-        "shaders/piece.vert", "shaders/piece.frag"
-    );
-
-    auto reflected_piece_shader = std::make_shared<graphics::shader>(
-        "shaders/piece_reflected.vert", "shaders/piece_reflected.frag"
-    );
-
-    auto cube_vertices = graphics::load_vertices_obj("meshes/pawn.obj");
-    auto piece = std::make_shared<graphics::mesh>(gfx.get(), cube_vertices);
-    piece->add_shader(piece_shader, 0);
-    piece->add_shader(id_shader, 1);
-    piece->scale(glm::vec3(0.1, 0.1, 0.1));
-    piece->translate(glm::vec3(0,5,0));
+    auto piece = std::make_shared<graphics::mesh_instance>();
+    {
+        piece->m_mesh = g_meshes["pawn"];
+        piece->add_shader(g_shaders["piece"], 0);
+        piece->add_shader(g_shaders["id"], 1);
+        piece->scale(glm::vec3(0.1, 0.1, 0.1));
+        piece->translate(glm::vec3(0,5,0));
+    }
+    
     gfx->add_mesh(piece);
 
-    auto reflected_piece = std::make_shared<graphics::mesh>(gfx.get(), cube_vertices);
-    reflected_piece->add_shader(reflected_piece_shader);
-    reflected_piece->scale(glm::vec3(0.1, -0.1, 0.1));
-    reflected_piece->translate(glm::vec3(0,5,0));
-    reflected_piece->on_begin_draw = [](){
-        glEnable(GL_STENCIL_TEST);
-        glEnable(GL_BLEND);
-
-        glStencilFunc(GL_EQUAL, 1, 0xFF);
-        glStencilMask(0x00);
-        glDepthMask(GL_TRUE);
-
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        glFrontFace(GL_CW);
-    };
-    reflected_piece->on_finish_draw = [](){
-        glDisable(GL_BLEND);
-        glDisable(GL_STENCIL_TEST);
-        glFrontFace(GL_CCW);
-    };
+    auto reflected_piece = std::make_shared<graphics::mesh_instance>();
+    {
+        reflected_piece->m_mesh = g_meshes["pawn"];
+        reflected_piece->add_shader(g_shaders["reflected_piece"]);
+        reflected_piece->scale(glm::vec3(0.1, -0.1, 0.1));
+        reflected_piece->translate(glm::vec3(0,5,0));
+        reflected_piece->on_begin_draw = setup_reflected;
+        reflected_piece->on_finish_draw = cleanup_reflected;
+    }
 
     gfx->add_mesh(reflected_piece, graphics::render_order::reflected);
 
@@ -166,7 +209,10 @@ int main()
 
         // mouse picking
         if (mouse_state.left_button) {
+            glm::vec3 old_clear_colour = gfx->m_clear_colour;
+            gfx->m_clear_colour = glm::vec3(0);
             gfx->draw(1, true);
+            gfx->m_clear_colour = old_clear_colour;
             uint8_t colour[3] = {};
             glReadPixels(
                 static_cast<GLint>(mouse_state.x),
@@ -182,22 +228,6 @@ int main()
     }
 
     glfwTerminate();
-
-    /*
-    chess::board board;
-    while(true) {
-        board.print_board();
-        char start_x;
-        char end_x;
-        int start_y;
-        int end_y;
-        std::cout << "Please enter move: e.g. a 1 a 2 \n";
-        std::cin >> start_x >> start_y >> end_x >> end_y;
-        start_x -= 97;
-        end_x -= 97;
-        board.move_piece(start_x, start_y, end_x, end_y);
-    }
-    */
 
     return 0;
 }

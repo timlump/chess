@@ -23,17 +23,27 @@ namespace graphics
     class gfx;
     class mesh {
         public:
-            mesh(gfx* graphics, std::vector<vertex> vertices);
-
+            mesh(std::vector<vertex> vertices);
             ~mesh();
+            void draw();
+            void refresh(std::shared_ptr<shader> shader);
 
+        private:
+            int m_num_vertices;
+            GLuint m_vbo;
+            GLuint m_vao;
+    };
+
+    class mesh_instance
+    {
+        public:
+            mesh_instance();
             void add_shader(std::shared_ptr<shader> shader, int layer = 0);
 
             void scale(glm::vec3 value);
             void translate(glm::vec3 value);
             void rotate(float degrees, glm::vec3 axis);
 
-            void refresh();
             void draw(int layer = 0);
             
             std::function<void()> on_begin_draw = nullptr;
@@ -42,13 +52,10 @@ namespace graphics
             // glm doesn't actually default matrices to identity
             glm::mat4 m_model_mat = glm::mat4(1.f);
 
+            std::shared_ptr<mesh> m_mesh = nullptr;
         private:
             unsigned int m_id;
-            gfx* m_gfx;
             int m_current_shader = 0;
             std::map<int,std::shared_ptr<shader>> m_shaders_layers;
-            int m_num_vertices;
-            GLuint m_vbo;
-            GLuint m_vao;
     };
 }

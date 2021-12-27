@@ -5,6 +5,30 @@
 
 namespace graphics
 {
+    gfx* gfx::s_gfx = nullptr;
+
+    void gfx::create(int width, int height)
+    {
+        if (s_gfx) {
+            throw std::runtime_error("gfx already initialized");
+        }
+        else {
+            s_gfx = new gfx(width,height);
+        }
+    }
+
+    void gfx::destroy()
+    {
+        if (s_gfx) {
+            delete s_gfx;
+            s_gfx = nullptr;
+        }
+    }
+
+    gfx* gfx::get()
+    {
+        return s_gfx;
+    }
     
     gfx::gfx(int width, int height) {
         // this must be called after getting the opengl context
@@ -76,7 +100,7 @@ namespace graphics
         }
     }
 
-    void gfx::add_mesh(std::shared_ptr<mesh> mesh, int order) {
-        m_meshes.insert(std::make_pair(order, mesh));
+    void gfx::add_mesh(std::shared_ptr<mesh_instance> instance, int order) {
+        m_meshes.insert(std::make_pair(order, instance));
     }
 }
