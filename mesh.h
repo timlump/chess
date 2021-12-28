@@ -18,7 +18,8 @@ namespace graphics
         glm::vec2 uv;
     };
 
-    std::vector<vertex> load_vertices_obj(std::string path);
+    std::vector<vertex> load_vertices_obj(std::string path,
+        glm::vec3 scale = glm::vec3(1), glm::vec3 offset = glm::vec3(0.f));
 
     class gfx;
     class mesh {
@@ -27,6 +28,9 @@ namespace graphics
             ~mesh();
             void draw();
             void refresh(std::shared_ptr<shader> shader);
+
+            glm::vec3 m_min_dims;
+            glm::vec3 m_max_dims;
 
         private:
             int m_num_vertices;
@@ -40,17 +44,18 @@ namespace graphics
             mesh_instance();
             void add_shader(std::shared_ptr<shader> shader, int layer = 0);
 
-            void scale(glm::vec3 value);
-            void translate(glm::vec3 value);
-            void rotate(float degrees, glm::vec3 axis);
-
             void draw(int layer = 0);
             
             std::function<void()> on_begin_draw = nullptr;
             std::function<void()> on_finish_draw = nullptr;
 
-            // glm doesn't actually default matrices to identity
-            glm::mat4 m_model_mat = glm::mat4(1.f);
+            glm::vec3 m_position = glm::vec3(0.f);
+            glm::vec3 m_scale = glm::vec3(1.f);
+            float m_x_rotation = 0;
+            float m_y_rotation = 0;
+            float m_z_rotation = 0;
+
+            glm::vec3 m_colour = glm::vec3(1.f);
 
             std::shared_ptr<mesh> m_mesh = nullptr;
         private:

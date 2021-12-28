@@ -4,6 +4,15 @@
 
 namespace chess
 {
+    /*
+        000 - nothing
+        001 - pawn
+        010 - knight
+        011 - bishop
+        100 - rook
+        101 - queen
+        110 - king
+    */
     enum piece_type
     {
         pawn = 1,
@@ -14,6 +23,10 @@ namespace chess
         king = 6
     };
 
+    /*
+        0000 - white
+        1000 - black
+    */
     enum piece_colour
     {
         white = 0,
@@ -25,7 +38,7 @@ namespace chess
         piece_colour current_player = white;
         
         // row - col
-        uint8_t tiles[8][8];
+        uint8_t tiles[8][8] = {};
         board_state()
         {
             std::fill(tiles[1], tiles[1] + 8, pawn | white);

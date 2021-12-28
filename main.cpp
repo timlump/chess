@@ -1,3 +1,4 @@
+#include "chess.h"
 #include "gfx.h"
 #include "primitives.h"
 #include <glm/gtc/type_ptr.hpp>
@@ -26,6 +27,15 @@ struct
     bool middle_button = false;
 
 } mouse_state;
+
+struct piece
+{
+    int x;
+    int y;
+    chess::piece_type type;
+    chess::piece_colour colour;
+    std::shared_ptr<graphics::mesh_instance> instance;
+};
 
 std::map<std::string, std::shared_ptr<graphics::shader>> g_shaders;
 void load_shaders()
@@ -61,7 +71,15 @@ void load_meshes()
     );
 
     g_meshes["pawn"] = std::make_shared<graphics::mesh>(
-        graphics::load_vertices_obj("meshes/pawn.obj")
+        graphics::load_vertices_obj("meshes/pawn.obj", glm::vec3(0.05f))
+    );
+
+    g_meshes["rook"] = std::make_shared<graphics::mesh>(
+        graphics::load_vertices_obj("meshes/rook.obj", glm::vec3(0.05f))
+    );
+
+    g_meshes["unknown"] = std::make_shared<graphics::mesh>(
+        graphics::load_vertices_obj("meshes/unknown.obj", glm::vec3(0.05f))
     );
 }
 
@@ -129,8 +147,11 @@ int main()
     load_shaders();
     load_meshes();
 
-    gfx->m_view_mat = glm::lookAt(glm::vec3(1.2f, 1.2f, 1.2f), glm::vec3(0.f), glm::vec3(0.f,1.f,0.f));
-    
+    chess::board_state initial_board;
+    chess::piece_colour current_player = chess::white;
+    std::vector<piece> white_pieces;
+    std::vector<piece> black_pieces;
+
     auto board = std::make_shared<graphics::mesh_instance>();
     {
         board->m_mesh = g_meshes["board"];
@@ -139,15 +160,68 @@ int main()
         board->on_finish_draw = cleanup_reflector;
     }
 
+    float board_side_width = board->m_mesh->m_max_dims.x - board->m_mesh->m_min_dims.x;
+    float tile_width = board_side_width / 8;
+
     gfx->add_mesh(board,graphics::render_order::reflector);
+
+    // board is already setup, use its state to create the pieces and position them properly
+    for (int y = 0 ; y < 8 ; y++)
+    {
+        for (int x = 0 ; x < 8 ; x++)
+        {
+            uint8_t tile = initial_board.tiles[y][x];
+            if (tile) {
+                std::cout << x << ":" << y << std::endl;
+                std::vector<piece>& player_pieces = (tile & chess::black) ? black_pieces : white_pieces;
+                uint8_t colour = tile & 0b1000;
+                uint8_t type = tile & 0b111;
+
+                piece current_piece;
+                current_piece.x = x;
+                current_piece.y = y;
+
+                auto mesh_instance = std::make_shared<graphics::mesh_instance>();
+                switch (type) {
+                    case chess::pawn:
+                    {
+                        mesh_instance->m_mesh = g_meshes["pawn"];
+                    } break;
+
+                    case chess::rook:
+                    {
+                        mesh_instance->m_mesh = g_meshes["rook"];
+                    } break;
+
+                    default:
+                        mesh_instance->m_mesh = g_meshes["unknown"];
+                };
+
+                float piece_width = mesh_instance->m_mesh->m_max_dims.x - mesh_instance->m_mesh->m_min_dims.x;
+
+                mesh_instance->add_shader(g_shaders["piece"]);
+                mesh_instance->add_shader(g_shaders["id"], 1);
+                mesh_instance->m_position.x = 
+                    (tile_width*x) + (piece_width/2) - (board_side_width/2);
+                mesh_instance->m_position.z =
+                    (tile_width*y) + (piece_width/2) - (board_side_width/2);
+
+                current_piece.instance = mesh_instance;
+                gfx->add_mesh(current_piece.instance);
+
+                player_pieces.push_back(current_piece);
+            }
+        }
+    }
+
+    gfx->m_view_mat = glm::lookAt(glm::vec3(1.2f, 1.2f, 1.2f), glm::vec3(0.f), glm::vec3(0.f,1.f,0.f));
 
     auto piece = std::make_shared<graphics::mesh_instance>();
     {
         piece->m_mesh = g_meshes["pawn"];
         piece->add_shader(g_shaders["piece"], 0);
         piece->add_shader(g_shaders["id"], 1);
-        piece->scale(glm::vec3(0.1, 0.1, 0.1));
-        piece->translate(glm::vec3(0,5,0));
+        piece->m_position = glm::vec3(0,5,0);
     }
     
     gfx->add_mesh(piece);
@@ -156,8 +230,7 @@ int main()
     {
         reflected_piece->m_mesh = g_meshes["pawn"];
         reflected_piece->add_shader(g_shaders["reflected_piece"]);
-        reflected_piece->scale(glm::vec3(0.1, -0.1, 0.1));
-        reflected_piece->translate(glm::vec3(0,5,0));
+        reflected_piece->m_position = glm::vec3(0,5,0);
         reflected_piece->on_begin_draw = setup_reflected;
         reflected_piece->on_finish_draw = cleanup_reflected;
     }
@@ -175,9 +248,9 @@ int main()
             glm::radians(camera_state.fov), width / (float)height, 1.f, 10.f
         );
 
-        board->rotate(1.f, glm::vec3(0,1,0));
-        piece->translate(glm::vec3(0,-0.004f, 0));
-        reflected_piece->translate(glm::vec3(0,-0.004f, 0));
+        //board->rotate(1.f, glm::vec3(0,1,0));
+        //piece->translate(glm::vec3(0,-0.004f, 0));
+        //reflected_piece->translate(glm::vec3(0,-0.004f, 0));
 
         // mouse picking
         if (mouse_state.left_button) {

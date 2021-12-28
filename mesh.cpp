@@ -101,7 +101,7 @@ namespace graphics
         return result;
     }
 
-    std::vector<vertex> load_vertices_obj(std::string path)
+    std::vector<vertex> load_vertices_obj(std::string path, glm::vec3 scale, glm::vec3 offset)
     {
         std::vector<vertex> result;
         std::ifstream file(path);
@@ -127,7 +127,10 @@ namespace graphics
                                 } break;
 
                                 default: {
-                                    vertices.push_back(to_vec3(line));
+                                    glm::vec3 vert = to_vec3(line);
+                                    vert *= scale;
+                                    vert += offset;
+                                    vertices.push_back(vert);
                                 } break;
                             }
                         } break;
@@ -167,6 +170,15 @@ namespace graphics
         glGenBuffers(1, &m_vbo);
         glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertex)*vertices.size(), vertices.data(), GL_STATIC_DRAW);
+
+        m_min_dims = glm::vec3(std::numeric_limits<float>::max());
+        m_max_dims = glm::vec3(std::numeric_limits<float>::min());
+        for (auto& vert : vertices) {
+            for (int idx = 0 ; idx < 3 ; idx++) {
+                m_min_dims[idx] = std::min(m_min_dims[idx], vert.pos[idx]);
+                m_max_dims[idx] = std::max(m_max_dims[idx], vert.pos[idx]);
+            }
+        }
     }
 
     mesh::~mesh()
@@ -221,22 +233,7 @@ namespace graphics
     {
         m_shaders_layers[layer] = shader;
     }
-
-    void mesh_instance::scale(glm::vec3 value)
-    {
-        m_model_mat = glm::scale(m_model_mat, value);
-    }
-
-    void mesh_instance::translate(glm::vec3 value)
-    {
-        m_model_mat = glm::translate(m_model_mat, value);
-    }
-
-    void mesh_instance::rotate(float degrees, glm::vec3 axis)
-    {
-        m_model_mat = glm::rotate(m_model_mat, glm::radians(degrees), axis);
-    }
-
+    
     void mesh_instance::draw(int layer)
     {
         if (m_shaders_layers.empty()) {
@@ -260,8 +257,15 @@ namespace graphics
 
             auto shader_program = shader->second->m_shader_program;
 
+            glm::mat4 model_matrix = glm::mat4(1.f);
+            model_matrix = glm::scale(model_matrix, m_scale);
+            model_matrix = glm::rotate(model_matrix, m_z_rotation, glm::vec3(0,0,1));
+            model_matrix = glm::rotate(model_matrix, m_y_rotation, glm::vec3(0,1,0));
+            model_matrix = glm::rotate(model_matrix, m_x_rotation, glm::vec3(1,0,0));
+            model_matrix = glm::translate(model_matrix, m_position);
+
             GLint model_uniform = glGetUniformLocation(shader_program, "model");
-            glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(m_model_mat));
+            glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model_matrix));
 
             auto gfx = gfx::get();
 
