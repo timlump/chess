@@ -29,7 +29,8 @@ namespace graphics
             glm::vec3 m_clear_colour = glm::vec3(0.39f, 0.58f, 0.93f);
             glm::vec3 m_light_pos = glm::vec3(10);
 
-            GLuint m_render_tex;
+            GLuint m_colour_tex;
+            GLuint m_normal_tex;
             GLuint m_depth_stencil_rbo;
 
         private:

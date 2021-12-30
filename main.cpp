@@ -112,7 +112,7 @@ int main()
     glfwSetScrollCallback(window, scroll_callback);
 
     graphics::scene::create(width,height);
-    auto gfx = graphics::scene::get();
+    auto scene_ctx = graphics::scene::get();
 
     load_shaders();
     load_meshes();
@@ -131,7 +131,7 @@ int main()
     float board_side_width = board->m_mesh->m_max_dims.x - board->m_mesh->m_min_dims.x;
     float tile_width = board_side_width / 8;
 
-    gfx->add_mesh(board,graphics::render_order::reflector);
+    scene_ctx->add_mesh(board,graphics::render_order::reflector);
 
     // board is already setup, use its state to create the pieces and position them properly
     for (int y = 0 ; y < 8 ; y++)
@@ -140,7 +140,6 @@ int main()
         {
             uint8_t tile = initial_board.tiles[y][x];
             if (tile) {
-                std::cout << x << ":" << y << std::endl;
                 std::vector<piece>& player_pieces = (tile & chess::black) ? black_pieces : white_pieces;
                 uint8_t colour = tile & 0b1000;
                 uint8_t type = tile & 0b111;
@@ -179,14 +178,14 @@ int main()
                     (tile_width*y) + (piece_width/2) - (board_side_width/2);
 
                 current_piece.instance = mesh_instance;
-                gfx->add_mesh(current_piece.instance);
+                scene_ctx->add_mesh(current_piece.instance);
 
                 player_pieces.push_back(current_piece);
             }
         }
     }
 
-    gfx->m_view_mat = glm::lookAt(glm::vec3(1.2f, 1.2f, 1.2f), glm::vec3(0.f), glm::vec3(0.f,1.f,0.f));
+    scene_ctx->m_view_mat = glm::lookAt(glm::vec3(1.2f, 1.2f, 1.2f), glm::vec3(0.f), glm::vec3(0.f,1.f,0.f));
 
     auto piece = std::make_shared<graphics::mesh_instance>();
     {
@@ -196,7 +195,7 @@ int main()
         piece->m_position = glm::vec3(0,5,0);
     }
     
-    gfx->add_mesh(piece);
+    scene_ctx->add_mesh(piece);
 
     graphics::compositor compositor;
     compositor.m_shader = g_shaders["ssr"];
@@ -208,7 +207,7 @@ int main()
         }
 
         // game logic here
-        gfx->m_projection_mat = glm::perspective(
+        scene_ctx->m_projection_mat = glm::perspective(
             glm::radians(camera_state.fov), width / (float)height, 1.f, 10.f
         );
 
@@ -218,10 +217,10 @@ int main()
 
         // mouse picking
         if (mouse_state.left_button) {
-            glm::vec3 old_clear_colour = gfx->m_clear_colour;
-            gfx->m_clear_colour = glm::vec3(0);
-            gfx->draw(1, true);
-            gfx->m_clear_colour = old_clear_colour;
+            glm::vec3 old_clear_colour = scene_ctx->m_clear_colour;
+            scene_ctx->m_clear_colour = glm::vec3(0);
+            scene_ctx->draw(1, true);
+            scene_ctx->m_clear_colour = old_clear_colour;
             uint8_t colour[3] = {};
             glReadPixels(
                 static_cast<GLint>(mouse_state.x),
@@ -234,10 +233,9 @@ int main()
             std::cout << "id: " << id << std::endl;
         }
 
-        // regular drawing
-        gfx->draw(0, true);
+        scene_ctx->draw(0, true);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, gfx->m_render_tex);
+        glBindTexture(GL_TEXTURE_2D, scene_ctx->m_colour_tex);
         compositor.draw();
         
         glfwSwapBuffers(window);
