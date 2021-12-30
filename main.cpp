@@ -35,7 +35,6 @@ struct piece
     chess::piece_type type;
     chess::piece_colour colour;
     std::shared_ptr<graphics::mesh_instance> instance;
-    std::shared_ptr<graphics::mesh_instance> reflection_instance;
 };
 
 std::map<std::string, std::shared_ptr<graphics::shader>> g_shaders;
@@ -53,8 +52,8 @@ void load_shaders()
         "shaders/piece.vert", "shaders/piece.frag"
     );
 
-    g_shaders["reflected_piece"] = std::make_shared<graphics::shader>(
-        "shaders/piece_reflected.vert", "shaders/piece_reflected.frag"
+    g_shaders["ssr"] = std::make_shared<graphics::shader>(
+        "shaders/passthrough.vert", "shaders/ssr.frag"  
     );
 }
 void reload_shaders()
@@ -87,42 +86,6 @@ void load_meshes()
     g_meshes["unknown"] = std::make_shared<graphics::mesh>(
         graphics::load_vertices_obj("meshes/unknown.obj", glm::vec3(0.05f))
     );
-}
-
-void setup_reflector()
-{
-    glEnable(GL_STENCIL_TEST);
-    glStencilFunc(GL_ALWAYS, 1, 0xFF);
-    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-    glStencilMask(0xFF);
-    glDepthMask(GL_FALSE);
-    glClear(GL_STENCIL_BUFFER_BIT);
-}
-
-void cleanup_reflector()
-{
-    glDisable(GL_STENCIL_TEST);
-}
-
-void setup_reflected()
-{
-    glEnable(GL_STENCIL_TEST);
-    glEnable(GL_BLEND);
-
-    glStencilFunc(GL_EQUAL, 1, 0xFF);
-    glStencilMask(0x00);
-    glDepthMask(GL_TRUE);
-
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    glFrontFace(GL_CW);
-}
-
-void cleanup_reflected()
-{
-    glDisable(GL_BLEND);
-    glDisable(GL_STENCIL_TEST);
-    glFrontFace(GL_CCW);
 }
 
 int main()
@@ -162,8 +125,6 @@ int main()
     {
         board->m_mesh = g_meshes["board"];
         board->add_shader(g_shaders["board"]);
-        board->on_begin_draw = setup_reflector;
-        board->on_finish_draw = cleanup_reflector;
     }
 
     float board_side_width = board->m_mesh->m_max_dims.x - board->m_mesh->m_min_dims.x;
@@ -219,16 +180,6 @@ int main()
                 current_piece.instance = mesh_instance;
                 gfx->add_mesh(current_piece.instance);
 
-                auto reflection = std::make_shared<graphics::mesh_instance>();
-                reflection->m_mesh = mesh_instance->m_mesh;
-                reflection->add_shader(g_shaders["reflected_piece"]);
-                reflection->m_position = mesh_instance->m_position;
-                reflection->m_scale = glm::vec3(1,-1,1);
-                reflection->on_begin_draw = setup_reflected;
-                reflection->on_finish_draw = cleanup_reflected;
-                current_piece.reflection_instance = reflection;
-                gfx->add_mesh(current_piece.reflection_instance, graphics::reflected);
-
                 player_pieces.push_back(current_piece);
             }
         }
@@ -245,17 +196,6 @@ int main()
     }
     
     gfx->add_mesh(piece);
-
-    auto reflected_piece = std::make_shared<graphics::mesh_instance>();
-    {
-        reflected_piece->m_mesh = g_meshes["pawn"];
-        reflected_piece->add_shader(g_shaders["reflected_piece"]);
-        reflected_piece->m_position = glm::vec3(0,5,0);
-        reflected_piece->on_begin_draw = setup_reflected;
-        reflected_piece->on_finish_draw = cleanup_reflected;
-    }
-
-    gfx->add_mesh(reflected_piece, graphics::render_order::reflected);
 
     while(not glfwWindowShouldClose(window)) {
         glfwPollEvents();
