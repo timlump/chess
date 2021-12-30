@@ -10,7 +10,8 @@ endif(CCACHE_FOUND)
 set(SOURCES
     shader.cpp
     mesh.cpp
-    gfx.cpp)
+    scene.cpp
+    compositor.cpp)
 
 add_executable(chess main.cpp ${SOURCES})
 target_link_libraries(chess -lGL -lEGL -lglfw -lGLEW)

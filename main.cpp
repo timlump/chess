@@ -1,6 +1,7 @@
 #include "chess.h"
-#include "gfx.h"
+#include "scene.h"
 #include "primitives.h"
+#include "compositor.h"
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 
@@ -53,7 +54,7 @@ void load_shaders()
     );
 
     g_shaders["ssr"] = std::make_shared<graphics::shader>(
-        "shaders/passthrough.vert", "shaders/ssr.frag"  
+        "shaders/passthrough.vert", "shaders/placeholder.frag"  
     );
 }
 void reload_shaders()
@@ -110,8 +111,8 @@ int main()
     glfwSetMouseButtonCallback(window, mouse_button_callback);
     glfwSetScrollCallback(window, scroll_callback);
 
-    graphics::gfx::create(width,height);
-    auto gfx = graphics::gfx::get();
+    graphics::scene::create(width,height);
+    auto gfx = graphics::scene::get();
 
     load_shaders();
     load_meshes();
@@ -197,6 +198,9 @@ int main()
     
     gfx->add_mesh(piece);
 
+    graphics::compositor compositor;
+    compositor.m_shader = g_shaders["ssr"];
+
     while(not glfwWindowShouldClose(window)) {
         glfwPollEvents();
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
@@ -231,7 +235,10 @@ int main()
         }
 
         // regular drawing
-        gfx->draw();
+        gfx->draw(0, true);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, gfx->m_render_tex);
+        compositor.draw();
         
         glfwSwapBuffers(window);
     }

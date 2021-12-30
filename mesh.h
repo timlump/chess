@@ -21,7 +21,6 @@ namespace graphics
     std::vector<vertex> load_vertices_obj(std::string path,
         glm::vec3 scale = glm::vec3(1), glm::vec3 offset = glm::vec3(0.f));
 
-    class gfx;
     class mesh {
         public:
             mesh(std::vector<vertex> vertices);

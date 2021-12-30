@@ -1,5 +1,5 @@
 #include "mesh.h"
-#include "gfx.h"
+#include "scene.h"
 
 #include <fstream>
 #include <iostream>
@@ -267,7 +267,7 @@ namespace graphics
             GLint model_uniform = glGetUniformLocation(shader_program, "model");
             glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model_matrix));
 
-            auto gfx = gfx::get();
+            auto gfx = scene::get();
 
             GLint view_uniform = glGetUniformLocation(shader_program, "view");
             glUniformMatrix4fv(view_uniform, 1, GL_FALSE, glm::value_ptr(gfx->m_view_mat));
