@@ -89,6 +89,7 @@ namespace graphics
 
         if (not successful_compile) {
             std::cerr << "Unable to compile shader\n";
+            throw std::runtime_error("unable to compile shader\n");
         }
 
         m_shader_program = glCreateProgram();

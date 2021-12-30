@@ -35,6 +35,7 @@ struct piece
     chess::piece_type type;
     chess::piece_colour colour;
     std::shared_ptr<graphics::mesh_instance> instance;
+    std::shared_ptr<graphics::mesh_instance> reflection_instance;
 };
 
 std::map<std::string, std::shared_ptr<graphics::shader>> g_shaders;
@@ -73,6 +74,11 @@ void load_meshes()
     g_meshes["pawn"] = std::make_shared<graphics::mesh>(
         graphics::load_vertices_obj("meshes/pawn.obj", glm::vec3(0.05f))
     );
+
+    g_meshes["bishop"] = std::make_shared<graphics::mesh>(
+        graphics::load_vertices_obj("meshes/bishop.obj", glm::vec3(0.05f))
+    );
+
 
     g_meshes["rook"] = std::make_shared<graphics::mesh>(
         graphics::load_vertices_obj("meshes/rook.obj", glm::vec3(0.05f))
@@ -121,8 +127,8 @@ void cleanup_reflected()
 
 int main()
 {
-    int width = 640;
-    int height = 480;
+    int width = 800;
+    int height = 600;
     if (not glfwInit()) {
         throw std::runtime_error("unable to initialize glfw");
     }
@@ -188,6 +194,11 @@ int main()
                         mesh_instance->m_mesh = g_meshes["pawn"];
                     } break;
 
+                    case chess::bishop:
+                    {
+                        mesh_instance->m_mesh = g_meshes["bishop"];
+                    } break;
+
                     case chess::rook:
                     {
                         mesh_instance->m_mesh = g_meshes["rook"];
@@ -196,7 +207,6 @@ int main()
                     default:
                         mesh_instance->m_mesh = g_meshes["unknown"];
                 };
-
                 float piece_width = mesh_instance->m_mesh->m_max_dims.x - mesh_instance->m_mesh->m_min_dims.x;
 
                 mesh_instance->add_shader(g_shaders["piece"]);
@@ -208,6 +218,16 @@ int main()
 
                 current_piece.instance = mesh_instance;
                 gfx->add_mesh(current_piece.instance);
+
+                auto reflection = std::make_shared<graphics::mesh_instance>();
+                reflection->m_mesh = mesh_instance->m_mesh;
+                reflection->add_shader(g_shaders["reflected_piece"]);
+                reflection->m_position = mesh_instance->m_position;
+                reflection->m_scale = glm::vec3(1,-1,1);
+                reflection->on_begin_draw = setup_reflected;
+                reflection->on_finish_draw = cleanup_reflected;
+                current_piece.reflection_instance = reflection;
+                gfx->add_mesh(current_piece.reflection_instance, graphics::reflected);
 
                 player_pieces.push_back(current_piece);
             }
@@ -264,6 +284,10 @@ int main()
                 height - static_cast<GLint>(mouse_state.y),
                 1, 1, GL_RGB, GL_UNSIGNED_BYTE, colour
             );
+            // convert back to id
+            uint32_t id = 0;
+            id = (colour[2] << 16) | (colour[1] << 8) | (colour[0]);
+            std::cout << "id: " << id << std::endl;
         }
 
         // regular drawing

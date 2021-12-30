@@ -223,8 +223,8 @@ namespace graphics
 
     mesh_instance::mesh_instance()
     {
-         // for use by an id buffer
-        static unsigned int current_id = 0;
+         // for use by an id buffer - start at 1 so black means no id
+        static unsigned int current_id = 1;
         m_id = current_id;
         current_id++;
     }
@@ -274,6 +274,15 @@ namespace graphics
 
             GLint proj_uniform = glGetUniformLocation(shader_program, "project");
             glUniformMatrix4fv(proj_uniform, 1, GL_FALSE, glm::value_ptr(gfx->m_projection_mat));
+
+            GLint id_uniform = glGetUniformLocation(shader_program, "id_colour");
+            if (id_uniform >= 0) {
+                glm::ivec3 id_colour = glm::vec3(0);
+                id_colour[0] = 0xFF & m_id;
+                id_colour[1] = 0xFF & (m_id << 8);
+                id_colour[2] = 0xFF & (m_id << 16);
+                glUniform3iv(id_uniform, 1, glm::value_ptr(id_colour));
+            }
 
             m_mesh->draw();
 
