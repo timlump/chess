@@ -234,8 +234,6 @@ int main()
         }
 
         scene_ctx->draw(0, true);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, scene_ctx->m_colour_tex);
         compositor.draw();
         
         glfwSwapBuffers(window);

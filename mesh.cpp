@@ -222,6 +222,7 @@ namespace graphics
 
         glBindFragDataLocation(shader->m_shader_program, 0, "out_colour");
         glBindFragDataLocation(shader->m_shader_program, 1, "out_normal");
+        glBindFragDataLocation(shader->m_shader_program, 2, "out_position");
     }
 
     mesh_instance::mesh_instance()

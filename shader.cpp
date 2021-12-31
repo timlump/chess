@@ -70,6 +70,7 @@ namespace graphics
             if (status != GL_TRUE) {
                 char buffer[512];
                 glGetShaderInfoLog(m_vertex_shader, 512, nullptr, buffer);
+                std::cerr << m_vert_path << std::endl;
                 std::cerr << "Vertex shader error: " << buffer << std::endl;
                 successful_compile = false;
             }
@@ -82,6 +83,7 @@ namespace graphics
             if (status != GL_TRUE) {
                 char buffer[512];
                 glGetShaderInfoLog(m_fragment_shader, 512, nullptr, buffer);
+                std::cerr << m_frag_path << std::endl;
                 std::cerr << "Fragment shader error: " << buffer << std::endl;
                 successful_compile = false;
             }

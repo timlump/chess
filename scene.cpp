@@ -73,6 +73,22 @@ namespace graphics
             );
         }
 
+        // position buffer
+        {
+            glGenTextures(1, &m_position_tex);
+            glBindTexture(GL_TEXTURE_2D, m_position_tex);
+
+            glTexImage2D(
+                GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL
+            );
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+            glFramebufferTexture2D(
+                GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, m_position_tex, 0
+            );
+        }
+
         glGenRenderbuffers(1, &m_depth_stencil_rbo);
         glBindRenderbuffer(GL_RENDERBUFFER, m_depth_stencil_rbo);
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
@@ -81,7 +97,7 @@ namespace graphics
             GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_depth_stencil_rbo
         );
 
-        const GLenum buffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
+        const GLenum buffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
         glDrawBuffers(2, buffers);
 
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -101,6 +117,7 @@ namespace graphics
 
         glDeleteTextures(1, &m_colour_tex);
         glDeleteTextures(1, &m_normal_tex);
+        glDeleteTextures(1, &m_position_tex);
         glDeleteRenderbuffers(1, &m_depth_stencil_rbo);
         glDeleteFramebuffers(1, &m_render_tex_framebuffer);
     }

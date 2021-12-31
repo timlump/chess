@@ -6,6 +6,7 @@ in vec2 uv;
 
 out vec3 normal_interp;
 out vec2 uv_interp;
+out vec4 position_interp;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -16,5 +17,7 @@ void main()
     normal_interp = normal;
     uv_interp = uv;
     mat4 mvp = project*view*model;
-    gl_Position = mvp*vec4(position, 1.0);
+    mediump vec4 pos = mvp*vec4(position, 1.0);
+    position_interp = pos;
+    gl_Position = pos;
 }

@@ -3,9 +3,11 @@
 in mediump vec2 uv_interp;
 out mediump vec4 out_colour;
 
-uniform sampler2D tex;
+uniform sampler2D colour_tex;
+uniform sampler2D normal_tex;
+uniform sampler2D position_tex;
 
 void main()
 {   
-    out_colour = texture(tex, uv_interp);
+    out_colour = texture(colour_tex, uv_interp);
 }

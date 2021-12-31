@@ -31,6 +31,7 @@ namespace graphics
 
             GLuint m_colour_tex;
             GLuint m_normal_tex;
+            GLuint m_position_tex;
             GLuint m_depth_stencil_rbo;
 
         private:
