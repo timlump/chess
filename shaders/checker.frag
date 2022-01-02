@@ -3,9 +3,9 @@ in mediump vec2 uv_interp;
 in mediump vec3 normal_interp;
 in mediump vec4 position_interp;
 
-out mediump vec4 out_colour;
-out mediump vec4 out_normal;
-out mediump vec4 out_position;
+layout(location = 0) out mediump vec4 out_colour;
+layout(location = 1) out mediump vec4 out_normal;
+layout(location = 2) out mediump vec4 out_position;
 
 void main()
 {

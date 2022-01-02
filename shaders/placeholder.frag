@@ -9,5 +9,5 @@ uniform sampler2D position_tex;
 
 void main()
 {   
-    out_colour = texture(colour_tex, uv_interp);
+    out_colour = texture(normal_tex, uv_interp);
 }

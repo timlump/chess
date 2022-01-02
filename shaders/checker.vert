@@ -14,10 +14,11 @@ uniform mat4 project;
 
 void main()
 {
-    normal_interp = normal;
+    mat4 normal_mat = transpose(inverse(model));
+    normal_interp = (normal_mat*vec4(normal,0)).xyz;
     uv_interp = uv;
-    mat4 mvp = project*view*model;
-    mediump vec4 pos = mvp*vec4(position, 1.0);
-    position_interp = pos;
-    gl_Position = pos;
+    mat4 mv = view*model;
+    mat4 mvp = project*mv;
+    position_interp = mv*vec4(position,1.0);
+    gl_Position = mvp*vec4(position, 1.0);
 }

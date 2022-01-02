@@ -1,6 +1,7 @@
 #include "compositor.h"
 #include "primitives.h"
 #include "scene.h"
+#include <glm/gtc/type_ptr.hpp>
 
 namespace graphics
 {
@@ -42,7 +43,12 @@ namespace graphics
             if (position_location >= 0) {
                 glActiveTexture(GL_TEXTURE2);
                 glBindTexture(GL_TEXTURE_2D, scene::get()->m_position_tex);
-                glUniform1i(normal_location, 2);
+                glUniform1i(position_location, 2);
+            }
+
+            GLint projection_location = glGetUniformLocation(m_shader->m_shader_program, "projection");
+            if (projection_location >= 0) {
+                glUniformMatrix4fv(projection_location, 1, false, glm::value_ptr(scene::get()->m_projection_mat));
             }
 
             m_screen_rect->draw();

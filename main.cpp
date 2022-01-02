@@ -54,7 +54,7 @@ void load_shaders()
     );
 
     g_shaders["ssr"] = std::make_shared<graphics::shader>(
-        "shaders/passthrough.vert", "shaders/placeholder.frag"  
+        "shaders/passthrough.vert", "shaders/ssr.frag"  
     );
 }
 void reload_shaders()
