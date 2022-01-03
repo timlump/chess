@@ -68,7 +68,7 @@ std::map<std::string, std::shared_ptr<graphics::mesh>> g_meshes;
 void load_meshes()
 {
     g_meshes["board"] = std::make_shared<graphics::mesh>(
-        primitives::SQUARE
+        graphics::load_vertices_obj("meshes/plane.obj", glm::vec3(0.05f))
     );
 
     g_meshes["pawn"] = std::make_shared<graphics::mesh>(
@@ -87,12 +87,16 @@ void load_meshes()
     g_meshes["unknown"] = std::make_shared<graphics::mesh>(
         graphics::load_vertices_obj("meshes/unknown.obj", glm::vec3(0.05f))
     );
+
+    g_meshes["cube"] = std::make_shared<graphics::mesh>(
+        graphics::load_vertices_obj("meshes/cube.obj", glm::vec3(0.05f))
+    );
 }
 
 int main()
 {
-    int width = 800;
-    int height = 600;
+    int width = 640;
+    int height = 480;
     if (not glfwInit()) {
         throw std::runtime_error("unable to initialize glfw");
     }
@@ -122,6 +126,14 @@ int main()
     std::vector<piece> white_pieces;
     std::vector<piece> black_pieces;
 
+    auto cube = std::make_shared<graphics::mesh_instance>();
+    {
+        cube->m_mesh = g_meshes["cube"];
+        cube->add_shader(g_shaders["piece"]);
+        //cube->m_position = glm::vec3(0,5,0);
+    }
+    scene_ctx->add_mesh(cube);
+    
     auto board = std::make_shared<graphics::mesh_instance>();
     {
         board->m_mesh = g_meshes["board"];
@@ -131,9 +143,27 @@ int main()
     float board_side_width = board->m_mesh->m_max_dims.x - board->m_mesh->m_min_dims.x;
     float tile_width = board_side_width / 8;
 
-    scene_ctx->add_mesh(board,graphics::render_order::reflector);
+    scene_ctx->add_mesh(board);
+
+    auto board2 = std::make_shared<graphics::mesh_instance>();
+    {
+        board2->m_mesh = g_meshes["board"];
+        board2->add_shader(g_shaders["board"]);
+        board2->m_x_rotation = glm::radians(90.f);
+    }
+    scene_ctx->add_mesh(board2);
+
+    auto board3 = std::make_shared<graphics::mesh_instance>();
+    {
+        board3->m_mesh = g_meshes["board"];
+        board3->add_shader(g_shaders["board"]);
+        board3->m_x_rotation = glm::radians(90.f);
+        board3->m_y_rotation = glm::radians(90.f);
+    }
+    scene_ctx->add_mesh(board3);
 
     // board is already setup, use its state to create the pieces and position them properly
+    
     for (int y = 0 ; y < 8 ; y++)
     {
         for (int x = 0 ; x < 8 ; x++)
@@ -184,18 +214,9 @@ int main()
             }
         }
     }
+    
 
     scene_ctx->m_view_mat = glm::lookAt(glm::vec3(1.2f, 1.2f, 1.2f), glm::vec3(0.f), glm::vec3(0.f,1.f,0.f));
-
-    auto piece = std::make_shared<graphics::mesh_instance>();
-    {
-        piece->m_mesh = g_meshes["pawn"];
-        piece->add_shader(g_shaders["piece"], 0);
-        piece->add_shader(g_shaders["id"], 1);
-        piece->m_position = glm::vec3(0,5,0);
-    }
-    
-    scene_ctx->add_mesh(piece);
 
     graphics::compositor compositor;
     compositor.m_shader = g_shaders["ssr"];
@@ -216,22 +237,22 @@ int main()
         //reflected_piece->translate(glm::vec3(0,-0.004f, 0));
 
         // mouse picking
-        if (mouse_state.left_button) {
-            glm::vec3 old_clear_colour = scene_ctx->m_clear_colour;
-            scene_ctx->m_clear_colour = glm::vec3(0);
-            scene_ctx->draw(1, true);
-            scene_ctx->m_clear_colour = old_clear_colour;
-            uint8_t colour[3] = {};
-            glReadPixels(
-                static_cast<GLint>(mouse_state.x),
-                height - static_cast<GLint>(mouse_state.y),
-                1, 1, GL_RGB, GL_UNSIGNED_BYTE, colour
-            );
-            // convert back to id
-            uint32_t id = 0;
-            id = (colour[2] << 16) | (colour[1] << 8) | (colour[0]);
-            std::cout << "id: " << id << std::endl;
-        }
+        // if (mouse_state.left_button) {
+        //     glm::vec3 old_clear_colour = scene_ctx->m_clear_colour;
+        //     scene_ctx->m_clear_colour = glm::vec3(0);
+        //     scene_ctx->draw(1, true);
+        //     scene_ctx->m_clear_colour = old_clear_colour;
+        //     uint8_t colour[3] = {};
+        //     glReadPixels(
+        //         static_cast<GLint>(mouse_state.x),
+        //         height - static_cast<GLint>(mouse_state.y),
+        //         1, 1, GL_RGB, GL_UNSIGNED_BYTE, colour
+        //     );
+        //     // convert back to id
+        //     uint32_t id = 0;
+        //     id = (colour[2] << 16) | (colour[1] << 8) | (colour[0]);
+        //     std::cout << "id: " << id << std::endl;
+        // }
 
         scene_ctx->draw(0, true);
         compositor.draw();
