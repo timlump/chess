@@ -40,6 +40,7 @@ struct reflection_result
     mediump float visible;
     mediump vec2 uv;
     mediump float len;
+    mediump vec3 debug_colour;
 };
 
 reflection_result get_reflection_uv(parameters params, mediump vec4 start, mediump vec4 end)
@@ -47,6 +48,7 @@ reflection_result get_reflection_uv(parameters params, mediump vec4 start, mediu
     reflection_result result;
     result.visible = 0.0;
     result.len = 0.0;
+    result.debug_colour = vec3(0.0,0.0,1.0);
 
     mediump vec4 start_frag = to_frag(params.tex_size, start);
     mediump vec4 end_frag = to_frag(params.tex_size, end);
@@ -67,9 +69,9 @@ reflection_result get_reflection_uv(parameters params, mediump vec4 start, mediu
 
     mediump float before_hit = 0.0;
     mediump float after_hit = 0.0;
+    int hit = 0;
 
     // pass 1
-    int hit = 0;
     while (current_length < max_length) 
     {
         current_frag += increment;
@@ -87,27 +89,41 @@ reflection_result get_reflection_uv(parameters params, mediump vec4 start, mediu
         mediump float current_ray_depth = (start.z * end.z) / mix(end.z, start.z, a);
         mediump float depth_diff = current_ray_depth-current_pos.z;
         if (depth_diff > 0.0 && depth_diff < params.thickness) {
+            //result.debug_colour = vec3(1.0, 0.0, 0.0);
+            //result.uv = current_coords;
             after_hit = a;
             hit = 1;
             break;
         }
-        before_hit = a;
+        else {
+            before_hit = a;
+        }
     }
-
+    
     // pass 2
-    int steps = params.steps * hit;
-    for (int i = 0 ; i < steps ; i++)
-    {
-        current_frag = mix(start_frag.xy, end_frag.xy, before_hit);
+    int num_steps = params.steps*hit;
+    after_hit = before_hit + ((after_hit - before_hit) / 2.0);
+
+    for (int i = 0 ; i < params.steps ; i++) {
+        current_frag = mix(start_frag.xy, end_frag.xy, after_hit);
+        current_length = length(current_frag.xy - start_frag.xy);
         mediump vec2 current_coords = current_frag / params.tex_size;
         mediump vec4 current_pos = texture(position_tex, current_coords);
-        mediump float current_ray_depth = (start.z * end.z) / mix(end.z, start.z, after_hit);
+
+        mediump float a = mix(
+            (current_frag.y - start_frag.y) / delta_y,
+            (current_frag.x - start_frag.x) / delta_x,
+            use_x
+        );
+
+        mediump float current_ray_depth = (start.z * end.z) / mix(end.z, start.z, a);
         mediump float depth_diff = current_ray_depth-current_pos.z;
+
         if (depth_diff > 0.0 && depth_diff < params.thickness) {
+            result.visible = (1.0 - clamp(depth_diff / params.thickness, 0.0, 1.0)); // fade out if its not an exact hit
+            after_hit = before_hit + ((after_hit - before_hit) / 2.0);
             result.uv = current_coords;
             result.len = current_length;
-            result.visible = 1.0;
-            after_hit = before_hit + ((after_hit - before_hit) / 2.0);
         }
         else {
             mediump float temp = after_hit;
@@ -121,10 +137,10 @@ reflection_result get_reflection_uv(parameters params, mediump vec4 start, mediu
 
 void main() {
     parameters params;
-    params.max_distance = 30.0;
-    params.resolution = 0.3;
-    params.steps = 30;
-    params.thickness = 1.0;
+    params.max_distance = 100.0;
+    params.resolution = 0.01;
+    params.steps = 10;
+    params.thickness = 2.0;
     params.tex_size = vec2(textureSize(position_tex, 0).xy);
     params.tex_coord = gl_FragCoord.xy / params.tex_size;
 
@@ -138,14 +154,16 @@ void main() {
     mediump vec4 end = vec4(position_from.xyz + pivot*params.max_distance, 1.0);
 
     reflection_result result = get_reflection_uv(params, start, end);
-    //result.visible *= (1.0 - max(dot(-unit_position_from, pivot), 0.0)); // not visible if pointed at the camera
-    //result.visible *= (result.uv.x < 0.0 || result.uv.x > 1.0 ? 0.0 : 1.0)*
-    //                  (result.uv.y < 0.0 || result.uv.y > 1.0 ? 0.0 : 1.0);
-    //result.visible *= (1.0 - clamp(result.len / params.max_distance, 0.0, 1.0)); // fade out as the ray gets further away
+    result.visible *= (1.0 - max(dot(-unit_position_from, pivot), 0.0)); // not visible if pointed at the camera
+    result.visible *= (result.uv.x < 0.0 || result.uv.x > 1.0 ? 0.0 : 1.0)*
+                      (result.uv.y < 0.0 || result.uv.y > 1.0 ? 0.0 : 1.0);
+    result.visible *= (1.0 - clamp(result.len / params.max_distance, 0.0, 1.0)); // fade out as the ray gets further away
 
     mediump vec3 reflection_colour = texture(colour_tex, result.uv).xyz*result.visible;
     mediump vec3 colour = texture(colour_tex, params.tex_coord).xyz;
     mediump vec3 normal_colour = texture(normal_tex, params.tex_coord).xyz;
+    mediump vec3 final_colour = mix(colour, reflection_colour, result.visible);
 
-    out_colour = vec4(reflection_colour, 1.0);
+
+    out_colour = vec4(final_colour, 1.0);
 }

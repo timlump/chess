@@ -93,6 +93,11 @@ void load_meshes()
     );
 }
 
+void load_scene_file(std::string filepath)
+{
+    
+}
+
 int main()
 {
     int width = 640;
@@ -121,18 +126,12 @@ int main()
     load_shaders();
     load_meshes();
 
+    load_scene_file("scenes/test.scene");
+
     chess::board_state initial_board;
     chess::piece_colour current_player = chess::white;
     std::vector<piece> white_pieces;
     std::vector<piece> black_pieces;
-
-    auto cube = std::make_shared<graphics::mesh_instance>();
-    {
-        cube->m_mesh = g_meshes["cube"];
-        cube->add_shader(g_shaders["piece"]);
-        //cube->m_position = glm::vec3(0,5,0);
-    }
-    scene_ctx->add_mesh(cube);
     
     auto board = std::make_shared<graphics::mesh_instance>();
     {
@@ -145,25 +144,7 @@ int main()
 
     scene_ctx->add_mesh(board);
 
-    auto board2 = std::make_shared<graphics::mesh_instance>();
-    {
-        board2->m_mesh = g_meshes["board"];
-        board2->add_shader(g_shaders["board"]);
-        board2->m_x_rotation = glm::radians(90.f);
-    }
-    scene_ctx->add_mesh(board2);
-
-    auto board3 = std::make_shared<graphics::mesh_instance>();
-    {
-        board3->m_mesh = g_meshes["board"];
-        board3->add_shader(g_shaders["board"]);
-        board3->m_x_rotation = glm::radians(90.f);
-        board3->m_y_rotation = glm::radians(90.f);
-    }
-    scene_ctx->add_mesh(board3);
-
     // board is already setup, use its state to create the pieces and position them properly
-    
     for (int y = 0 ; y < 8 ; y++)
     {
         for (int x = 0 ; x < 8 ; x++)
@@ -214,7 +195,6 @@ int main()
             }
         }
     }
-    
 
     scene_ctx->m_view_mat = glm::lookAt(glm::vec3(1.2f, 1.2f, 1.2f), glm::vec3(0.f), glm::vec3(0.f,1.f,0.f));
 
@@ -311,4 +291,11 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     camera_state.fov -= yoffset;
+    if (camera_state.fov < 10.0) {
+        camera_state.fov = 10.0;
+    }
+    
+    if (camera_state.fov > 200.0) {
+        camera_state.fov = 200.0;
+    }
 }

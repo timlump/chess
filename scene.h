@@ -9,9 +9,7 @@ namespace graphics
 {
     enum render_order
     {
-        standard = 0,
-        reflector = 1,
-        reflected = 2
+        standard = 0
     };
 
     class scene {
