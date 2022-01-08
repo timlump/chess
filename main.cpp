@@ -53,8 +53,8 @@ void load_shaders()
         "shaders/piece.vert", "shaders/piece.frag"
     );
 
-    g_shaders["ssr"] = std::make_shared<graphics::shader>(
-        "shaders/passthrough.vert", "shaders/ssr.frag"  
+    g_shaders["passthrough"] = std::make_shared<graphics::shader>(
+        "shaders/passthrough.vert", "shaders/passthrough.frag"  
     );
 }
 void reload_shaders()
@@ -120,7 +120,6 @@ int main()
     glfwSetMouseButtonCallback(window, mouse_button_callback);
     glfwSetScrollCallback(window, scroll_callback);
 
-    graphics::scene::create(width,height);
     auto scene_ctx = graphics::scene::get();
 
     load_shaders();
@@ -199,7 +198,7 @@ int main()
     scene_ctx->m_view_mat = glm::lookAt(glm::vec3(1.2f, 1.2f, 1.2f), glm::vec3(0.f), glm::vec3(0.f,1.f,0.f));
 
     graphics::compositor compositor;
-    compositor.m_shader = g_shaders["ssr"];
+    compositor.m_shader = g_shaders["passthrough"];
 
     while(not glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -234,7 +233,8 @@ int main()
         //     std::cout << "id: " << id << std::endl;
         // }
 
-        scene_ctx->draw(0, true);
+        scene_ctx->draw(graphics::render_type::shadow_map);
+        scene_ctx->draw(graphics::render_type::gbuffer);
         compositor.draw();
         
         glfwSwapBuffers(window);

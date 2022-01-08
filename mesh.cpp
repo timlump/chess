@@ -218,6 +218,12 @@ namespace graphics
                 glVertexAttribPointer(uv_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vertex),
                     (void*)(sizeof(vertex::pos) + sizeof(vertex::normal)));
             }
+
+            GLint shadow_location = glGetUniformLocation(shader->m_shader_program, "shadow_map");
+            if (shadow_location != -1) {
+                // should be texture unit 0
+                glUniform1i(shadow_location, 0);
+            }
         }
     }
 

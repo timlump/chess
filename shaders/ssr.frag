@@ -120,7 +120,7 @@ reflection_result get_reflection_uv(parameters params, mediump vec4 start, mediu
         mediump float depth_diff = current_ray_depth-current_pos.z;
 
         if (depth_diff > 0.0 && depth_diff < params.thickness) {
-            result.visible = (1.0 - clamp(depth_diff / params.thickness, 0.0, 1.0)); // fade out if its not an exact hit
+            result.visible = (1.0 - clamp(depth_diff / params.thickness, 0.0, 1.0))*current_pos.w; // fade out if its not an exact hit
             after_hit = before_hit + ((after_hit - before_hit) / 2.0);
             result.uv = current_coords;
             result.len = current_length;
@@ -137,10 +137,10 @@ reflection_result get_reflection_uv(parameters params, mediump vec4 start, mediu
 
 void main() {
     parameters params;
-    params.max_distance = 100.0;
-    params.resolution = 0.01;
+    params.max_distance = 200.0;
+    params.resolution = 0.1;
     params.steps = 10;
-    params.thickness = 2.0;
+    params.thickness = 0.3;
     params.tex_size = vec2(textureSize(position_tex, 0).xy);
     params.tex_coord = gl_FragCoord.xy / params.tex_size;
 
@@ -165,5 +165,5 @@ void main() {
     mediump vec3 final_colour = mix(colour, reflection_colour, result.visible);
 
 
-    out_colour = vec4(final_colour, 1.0);
+    out_colour = vec4(reflection_colour, 1.0);
 }
