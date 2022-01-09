@@ -254,10 +254,12 @@ namespace graphics
 
             glm::mat4 model_matrix = glm::mat4(1.f);
             model_matrix = glm::scale(model_matrix, m_scale);
+            
+            model_matrix = glm::translate(model_matrix, m_position);
+
             model_matrix = glm::rotate(model_matrix, m_z_rotation, glm::vec3(0,0,1));
             model_matrix = glm::rotate(model_matrix, m_y_rotation, glm::vec3(0,1,0));
             model_matrix = glm::rotate(model_matrix, m_x_rotation, glm::vec3(1,0,0));
-            model_matrix = glm::translate(model_matrix, m_position);
 
             GLint model_uniform = glGetUniformLocation(shader_program, "model");
             if (model_uniform != -1) {

@@ -50,11 +50,11 @@ void load_shaders()
     );
 
     g_shaders["board"] = std::make_shared<graphics::shader>(
-        "shaders/checker.vert", "shaders/checker.frag"
+        "shaders/default.vert", "shaders/checker.frag"
     );
 
     g_shaders["piece"] = std::make_shared<graphics::shader>(
-        "shaders/piece.vert", "shaders/piece.frag"
+        "shaders/default.vert", "shaders/piece.frag"
     );
 
     g_shaders["passthrough"] = std::make_shared<graphics::shader>(
@@ -83,9 +83,20 @@ void load_meshes()
         graphics::load_vertices_obj("meshes/bishop.obj", glm::vec3(0.05f))
     );
 
+    g_meshes["knight"] = std::make_shared<graphics::mesh>(
+        graphics::load_vertices_obj("meshes/knight.obj", glm::vec3(0.05f))
+    );
 
     g_meshes["rook"] = std::make_shared<graphics::mesh>(
         graphics::load_vertices_obj("meshes/rook.obj", glm::vec3(0.05f))
+    );
+
+    g_meshes["queen"] = std::make_shared<graphics::mesh>(
+        graphics::load_vertices_obj("meshes/queen.obj", glm::vec3(0.05f))
+    );
+
+    g_meshes["king"] = std::make_shared<graphics::mesh>(
+        graphics::load_vertices_obj("meshes/king.obj", glm::vec3(0.05f))
     );
 
     g_meshes["unknown"] = std::make_shared<graphics::mesh>(
@@ -104,8 +115,8 @@ void load_scene_file(std::string filepath)
 
 int main()
 {
-    int width = 640;
-    int height = 480;
+    int width = 1024;
+    int height = 768;
     if (not glfwInit()) {
         throw std::runtime_error("unable to initialize glfw");
     }
@@ -178,6 +189,24 @@ int main()
                     case chess::rook:
                     {
                         mesh_instance->m_mesh = g_meshes["rook"];
+                    } break;
+
+                    case chess::knight:
+                    {
+                        mesh_instance->m_mesh = g_meshes["knight"];
+                        if (colour == chess::black) {
+                            mesh_instance->m_y_rotation = glm::radians(180.f);
+                        }
+                    } break;
+
+                    case chess::queen:
+                    {
+                        mesh_instance->m_mesh = g_meshes["queen"];
+                    } break;
+
+                    case chess::king:
+                    {
+                        mesh_instance->m_mesh = g_meshes["king"];
                     } break;
 
                     default:
