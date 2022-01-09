@@ -212,6 +212,10 @@ int main()
                     default:
                         mesh_instance->m_mesh = g_meshes["unknown"];
                 };
+
+                mesh_instance->m_colour = (colour == chess::black) ?
+                    glm::vec3(0.4, 0.2, 0.0) : glm::vec3(0.67, 0.64, 0.41);
+
                 float piece_width = mesh_instance->m_mesh->m_max_dims.x - mesh_instance->m_mesh->m_min_dims.x;
 
                 mesh_instance->m_shaders_layers[0] = g_shaders["piece"];
@@ -316,6 +320,26 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         case GLFW_KEY_R:
         {
             reload_shaders();
+        } break;
+
+        case GLFW_KEY_UP:
+        {
+            graphics::scene::get()->m_light_pos.z -= 0.01f;
+        } break;
+
+        case GLFW_KEY_DOWN:
+        {
+            graphics::scene::get()->m_light_pos.z += 0.01f;
+        } break;
+
+        case GLFW_KEY_LEFT:
+        {
+            graphics::scene::get()->m_light_pos.x -= 0.01f;
+        } break;
+
+        case GLFW_KEY_RIGHT:
+        {
+            graphics::scene::get()->m_light_pos.x += 0.01f;
         } break;
     }
 }

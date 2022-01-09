@@ -8,6 +8,7 @@ layout(location = 0) out mediump vec4 out_colour;
 layout(location = 1) out mediump vec4 out_normal;
 layout(location = 2) out mediump vec4 out_position;
 
+uniform mediump vec3 colour;
 uniform mediump vec3 light_pos;
 uniform sampler2D shadow_map;
 
@@ -18,7 +19,7 @@ mediump float shadow_amount(mediump vec4 frag_light_pos)
     mediump float closest_depth = texture(shadow_map, proj_coords.xy).r;
     mediump float current_depth = proj_coords.z;
     mediump float bias = 0.005;
-    mediump float shadow  = current_depth - bias > closest_depth ? 0.8 : 0.0;
+    mediump float shadow  = current_depth - bias > closest_depth ? 1.0 : 0.0;
     return shadow;
 }
 
@@ -28,7 +29,7 @@ void main()
     mediump float light = dot(light_dir, normal_interp);
     light *= 1.0 - shadow_amount(pos_in_lightspace);
 
-    out_colour = vec4(vec3(1.0)*light, 1.0);
+    out_colour = vec4(colour*light, 1.0);
     out_normal = vec4(normal_interp, 1.0);
     out_position = position_interp;
 }

@@ -285,6 +285,12 @@ namespace graphics
                 glUniform3iv(id_uniform, 1, glm::value_ptr(id_colour));
             }
 
+            GLint colour_location = glGetUniformLocation(shader_program, "colour");
+            if (colour_location != -1) {
+                glUniform3fv(colour_location, 1, glm::value_ptr(m_colour));
+            }
+
+
             GLint shadow_location = glGetUniformLocation(shader_program, "shadow_map");
             if (shadow_location != -1) {
                 // should be texture unit 0
