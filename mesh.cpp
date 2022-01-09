@@ -218,12 +218,6 @@ namespace graphics
                 glVertexAttribPointer(uv_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vertex),
                     (void*)(sizeof(vertex::pos) + sizeof(vertex::normal)));
             }
-
-            GLint shadow_location = glGetUniformLocation(shader->m_shader_program, "shadow_map");
-            if (shadow_location != -1) {
-                // should be texture unit 0
-                glUniform1i(shadow_location, 0);
-            }
         }
     }
 
@@ -233,11 +227,6 @@ namespace graphics
         static unsigned int current_id = 1;
         m_id = current_id;
         current_id++;
-    }
-
-    void mesh_instance::add_shader(std::shared_ptr<shader> shader, int layer)
-    {
-        m_shaders_layers[layer] = shader;
     }
     
     void mesh_instance::draw(int layer)
@@ -271,23 +260,45 @@ namespace graphics
             model_matrix = glm::translate(model_matrix, m_position);
 
             GLint model_uniform = glGetUniformLocation(shader_program, "model");
-            glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model_matrix));
-
-            auto gfx = scene::get();
+            if (model_uniform != -1) {
+                glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model_matrix));
+            }
 
             GLint view_uniform = glGetUniformLocation(shader_program, "view");
-            glUniformMatrix4fv(view_uniform, 1, GL_FALSE, glm::value_ptr(gfx->m_view_mat));
-
+            if (view_uniform != -1) {
+                glUniformMatrix4fv(view_uniform, 1, GL_FALSE, glm::value_ptr(scene::get()->m_view_mat));
+            }
+            
             GLint proj_uniform = glGetUniformLocation(shader_program, "project");
-            glUniformMatrix4fv(proj_uniform, 1, GL_FALSE, glm::value_ptr(gfx->m_projection_mat));
+            if (proj_uniform != -1) {
+                glUniformMatrix4fv(proj_uniform, 1, GL_FALSE, glm::value_ptr(scene::get()->m_projection_mat));
+            }
 
             GLint id_uniform = glGetUniformLocation(shader_program, "id_colour");
-            if (id_uniform >= 0) {
+            if (id_uniform != -1) {
                 glm::ivec3 id_colour = glm::vec3(0);
                 id_colour[0] = 0xFF & m_id;
                 id_colour[1] = 0xFF & (m_id << 8);
                 id_colour[2] = 0xFF & (m_id << 16);
                 glUniform3iv(id_uniform, 1, glm::value_ptr(id_colour));
+            }
+
+            GLint shadow_location = glGetUniformLocation(shader_program, "shadow_map");
+            if (shadow_location != -1) {
+                // should be texture unit 0
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, scene::get()->m_shadowmap_tex);
+                glUniform1i(shadow_location, 0);
+            }
+
+            GLint light_location = glGetUniformLocation(shader_program, "light_pos");
+            if (light_location != -1) {
+                glUniform3fv(light_location, 1, glm::value_ptr(scene::get()->m_light_pos));
+            }
+
+            GLint light_mat_location = glGetUniformLocation(shader_program, "light_mat");
+            if (light_mat_location != -1) {
+                glUniformMatrix4fv(light_mat_location, 1, GL_FALSE, glm::value_ptr(scene::get()->m_light_space_mat));
             }
 
             m_mesh->draw();

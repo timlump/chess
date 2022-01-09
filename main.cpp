@@ -45,6 +45,10 @@ void load_shaders()
         "shaders/id.vert", "shaders/id.frag"
     );
 
+    g_shaders["shadow"] = std::make_shared<graphics::shader>(
+        "shaders/shadow.vert", "shaders/shadow.frag"
+    );
+
     g_shaders["board"] = std::make_shared<graphics::shader>(
         "shaders/checker.vert", "shaders/checker.frag"
     );
@@ -135,7 +139,8 @@ int main()
     auto board = std::make_shared<graphics::mesh_instance>();
     {
         board->m_mesh = g_meshes["board"];
-        board->add_shader(g_shaders["board"]);
+        board->m_shaders_layers[0] = g_shaders["board"];
+        board->m_shaders_layers[1] = g_shaders["shadow"];
     }
 
     float board_side_width = board->m_mesh->m_max_dims.x - board->m_mesh->m_min_dims.x;
@@ -180,8 +185,9 @@ int main()
                 };
                 float piece_width = mesh_instance->m_mesh->m_max_dims.x - mesh_instance->m_mesh->m_min_dims.x;
 
-                mesh_instance->add_shader(g_shaders["piece"]);
-                mesh_instance->add_shader(g_shaders["id"], 1);
+                mesh_instance->m_shaders_layers[0] = g_shaders["piece"];
+                mesh_instance->m_shaders_layers[1] = g_shaders["shadow"];
+
                 mesh_instance->m_position.x = 
                     (tile_width*x) + (piece_width/2) - (board_side_width/2);
                 mesh_instance->m_position.z =
@@ -195,8 +201,6 @@ int main()
         }
     }
 
-    scene_ctx->m_view_mat = glm::lookAt(glm::vec3(1.2f, 1.2f, 1.2f), glm::vec3(0.f), glm::vec3(0.f,1.f,0.f));
-
     graphics::compositor compositor;
     compositor.m_shader = g_shaders["passthrough"];
 
@@ -209,6 +213,10 @@ int main()
         // game logic here
         scene_ctx->m_projection_mat = glm::perspective(
             glm::radians(camera_state.fov), width / (float)height, 1.f, 10.f
+        );
+
+        scene_ctx->m_view_mat = glm::lookAt(
+            glm::vec3(1.2f, 1.2f, 1.2f), glm::vec3(0.f), glm::vec3(0.f,1.f,0.f)
         );
 
         //board->rotate(1.f, glm::vec3(0,1,0));
@@ -233,8 +241,30 @@ int main()
         //     std::cout << "id: " << id << std::endl;
         // }
 
-        scene_ctx->draw(graphics::render_type::shadow_map);
-        scene_ctx->draw(graphics::render_type::gbuffer);
+        {
+            // the projection and view matrices here are going to be set to the light's perspective now
+            glm::mat4 saved_projection = scene_ctx->m_projection_mat;
+            glm::mat4 saved_view = scene_ctx->m_view_mat;
+
+            scene_ctx->m_view_mat = glm::lookAt(
+                scene_ctx->m_light_pos,
+                glm::vec3(0.f),
+                glm::vec3(0.f,1.f,0.f)
+            );
+
+            scene_ctx->m_projection_mat = glm::ortho(
+                -2.f, 2.0f, -2.f, 2.f, 1.f, 7.5f
+            );
+
+            scene_ctx->draw(graphics::render_type::shadow_map, 1);
+
+            scene_ctx->m_light_space_mat = scene_ctx->m_projection_mat * scene_ctx->m_view_mat;
+
+            scene_ctx->m_projection_mat = saved_projection;
+            scene_ctx->m_view_mat = saved_view;
+        }
+        
+        scene_ctx->draw(graphics::render_type::gbuffer, 0);
         compositor.draw();
         
         glfwSwapBuffers(window);

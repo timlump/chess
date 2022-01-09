@@ -41,7 +41,6 @@ namespace graphics
     {
         public:
             mesh_instance();
-            void add_shader(std::shared_ptr<shader> shader, int layer = 0);
 
             void draw(int layer = 0);
             
@@ -57,9 +56,10 @@ namespace graphics
             glm::vec3 m_colour = glm::vec3(1.f);
 
             std::shared_ptr<mesh> m_mesh = nullptr;
+
+            std::map<int,std::shared_ptr<shader>> m_shaders_layers;
         private:
             unsigned int m_id;
             int m_current_shader = 0;
-            std::map<int,std::shared_ptr<shader>> m_shaders_layers;
     };
 }

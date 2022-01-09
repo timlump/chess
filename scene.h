@@ -15,8 +15,8 @@ namespace graphics
         shadow_map
     };
 
-    constexpr int SHADOW_WIDTH = 1024;
-    constexpr int SHADOW_HEIGHT = 1024;
+    constexpr int SHADOW_WIDTH = 2048;
+    constexpr int SHADOW_HEIGHT = 2048;
 
     class scene {
         public:
@@ -30,6 +30,9 @@ namespace graphics
             glm::mat4 m_view_mat = glm::mat4(1.f);
             glm::mat4 m_projection_mat = glm::mat4(1.f);
             glm::vec3 m_clear_colour = glm::vec3(0.39f, 0.58f, 0.93f);
+            glm::mat4 m_light_space_mat = glm::mat4(1.f);
+
+            glm::vec3 m_light_pos = glm::vec3(2.0, 2.0, -2.0);
 
             GLuint m_colour_tex;
             GLuint m_normal_tex;
