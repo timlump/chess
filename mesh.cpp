@@ -268,12 +268,12 @@ namespace graphics
 
             GLint view_uniform = glGetUniformLocation(shader_program, "view");
             if (view_uniform != -1) {
-                glUniformMatrix4fv(view_uniform, 1, GL_FALSE, glm::value_ptr(scene::get()->m_view_mat));
+                glUniformMatrix4fv(view_uniform, 1, GL_FALSE, glm::value_ptr(scene::get()->get_view_mat()));
             }
             
             GLint proj_uniform = glGetUniformLocation(shader_program, "project");
             if (proj_uniform != -1) {
-                glUniformMatrix4fv(proj_uniform, 1, GL_FALSE, glm::value_ptr(scene::get()->m_projection_mat));
+                glUniformMatrix4fv(proj_uniform, 1, GL_FALSE, glm::value_ptr(scene::get()->get_proj_mat()));
             }
 
             GLint id_uniform = glGetUniformLocation(shader_program, "id_colour");
@@ -301,7 +301,8 @@ namespace graphics
 
             GLint light_location = glGetUniformLocation(shader_program, "light_pos");
             if (light_location != -1) {
-                glUniform3fv(light_location, 1, glm::value_ptr(scene::get()->m_light_pos));
+                glm::vec3 light_pos = scene::get()->m_light_params.position;
+                glUniform3fv(light_location, 1, glm::value_ptr(light_pos));
             }
 
             GLint light_mat_location = glGetUniformLocation(shader_program, "light_mat");

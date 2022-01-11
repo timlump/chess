@@ -8,6 +8,7 @@ layout(location = 0) out mediump vec4 out_colour;
 layout(location = 1) out mediump vec4 out_normal;
 layout(location = 2) out mediump vec4 out_position;
 
+uniform mediump vec3 view_pos;
 uniform mediump vec3 colour;
 uniform mediump vec3 light_pos;
 uniform sampler2D shadow_map;

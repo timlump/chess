@@ -244,12 +244,8 @@ int main()
         }
 
         // game logic here
-        scene_ctx->m_projection_mat = glm::perspective(
+        scene_ctx->m_camera_params.projection = scene_ctx->m_camera_params.projection = glm::perspective(
             glm::radians(camera_state.fov), width / (float)height, 1.f, 10.f
-        );
-
-        scene_ctx->m_view_mat = glm::lookAt(
-            glm::vec3(1.2f, 1.2f, 1.2f), glm::vec3(0.f), glm::vec3(0.f,1.f,0.f)
         );
 
         //board->rotate(1.f, glm::vec3(0,1,0));
@@ -274,29 +270,7 @@ int main()
         //     std::cout << "id: " << id << std::endl;
         // }
 
-        {
-            // the projection and view matrices here are going to be set to the light's perspective now
-            glm::mat4 saved_projection = scene_ctx->m_projection_mat;
-            glm::mat4 saved_view = scene_ctx->m_view_mat;
-
-            scene_ctx->m_view_mat = glm::lookAt(
-                scene_ctx->m_light_pos,
-                glm::vec3(0.f),
-                glm::vec3(0.f,1.f,0.f)
-            );
-
-            scene_ctx->m_projection_mat = glm::ortho(
-                -2.f, 2.0f, -2.f, 2.f, 1.f, 7.5f
-            );
-
-            scene_ctx->draw(graphics::render_type::shadow_map, 1);
-
-            scene_ctx->m_light_space_mat = scene_ctx->m_projection_mat * scene_ctx->m_view_mat;
-
-            scene_ctx->m_projection_mat = saved_projection;
-            scene_ctx->m_view_mat = saved_view;
-        }
-        
+        scene_ctx->draw(graphics::render_type::shadow_map, 1);    
         scene_ctx->draw(graphics::render_type::gbuffer, 0);
         compositor.draw();
         
@@ -324,22 +298,22 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
         case GLFW_KEY_UP:
         {
-            graphics::scene::get()->m_light_pos.z -= 0.01f;
+            graphics::scene::get()->m_light_params.position.z -= 0.01f;
         } break;
 
         case GLFW_KEY_DOWN:
         {
-            graphics::scene::get()->m_light_pos.z += 0.01f;
+            graphics::scene::get()->m_light_params.position.z += 0.01f;
         } break;
 
         case GLFW_KEY_LEFT:
         {
-            graphics::scene::get()->m_light_pos.x -= 0.01f;
+            graphics::scene::get()->m_light_params.position.x -= 0.01f;
         } break;
 
         case GLFW_KEY_RIGHT:
         {
-            graphics::scene::get()->m_light_pos.x += 0.01f;
+            graphics::scene::get()->m_light_params.position.x += 0.01f;
         } break;
     }
 }

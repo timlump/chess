@@ -27,12 +27,8 @@ namespace graphics
 
             void add_mesh(std::shared_ptr<mesh_instance> instance, int order = 0);
 
-            glm::mat4 m_view_mat = glm::mat4(1.f);
-            glm::mat4 m_projection_mat = glm::mat4(1.f);
             glm::vec3 m_clear_colour = glm::vec3(0.39f, 0.58f, 0.93f);
             glm::mat4 m_light_space_mat = glm::mat4(1.f);
-
-            glm::vec3 m_light_pos = glm::vec3(2.0, 2.0, -2.0);
 
             GLuint m_colour_tex;
             GLuint m_normal_tex;
@@ -41,7 +37,36 @@ namespace graphics
             
             GLuint m_shadowmap_tex;
 
+            glm::vec3 m_up = glm::vec3(0,1,0);
+
+            struct 
+            {
+                glm::vec3 position = glm::vec3(1.2f, 1.2f, 1.2f);
+                glm::vec3 target = glm::vec3(0.0);
+                glm::mat4 projection = glm::mat4(1.f);
+            } m_camera_params;
+
+            struct
+            {
+                glm::vec3 position = glm::vec3(2.0, 2.0, -2.0);
+                glm::vec3 target = glm::vec3(0.0);
+                glm::mat4 projection = glm::ortho(
+                    -2.f, 2.0f, -2.f, 2.f, 1.f, 7.5f
+                );
+            } m_light_params;
+
+            glm::mat4 get_view_mat() {
+                return m_view_mat;
+            }
+
+            glm::mat4 get_proj_mat() {
+                return m_proj_mat;
+            }
+
         private:
+
+            glm::mat4 m_view_mat = glm::mat4(1.f);
+            glm::mat4 m_proj_mat = glm::mat4(1.f);
 
             static scene* s_gfx;
             scene();

@@ -48,7 +48,8 @@ namespace graphics
 
             GLint projection_location = glGetUniformLocation(m_shader->m_shader_program, "projection");
             if (projection_location >= 0) {
-                glUniformMatrix4fv(projection_location, 1, false, glm::value_ptr(scene::get()->m_projection_mat));
+                glm::mat4 proj_mat = scene::get()->get_proj_mat();
+                glUniformMatrix4fv(projection_location, 1, false, glm::value_ptr(proj_mat));
             }
 
             m_screen_rect->draw();

@@ -168,6 +168,24 @@ namespace graphics
     }
 
     void scene::draw(render_type type, int layer) {
+        if (type == render_type::shadow_map) {
+            m_view_mat = glm::lookAt(
+                m_light_params.position,
+                m_light_params.target,
+                m_up
+            );
+            m_proj_mat = m_light_params.projection;
+            m_light_space_mat = m_proj_mat*m_view_mat;
+        }
+        else {
+            m_view_mat = glm::lookAt(
+                m_camera_params.position,
+                m_camera_params.target,
+                m_up
+            );
+            m_proj_mat = m_camera_params.projection;
+        }
+
         glViewport(0,0,m_width,m_height);
         switch (type)
         {
