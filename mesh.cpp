@@ -290,6 +290,10 @@ namespace graphics
                 glUniform3fv(colour_location, 1, glm::value_ptr(m_colour));
             }
 
+            GLint view_pos_location = glGetUniformLocation(shader_program, "view_pos");
+            if (view_pos_location != -1) {
+                glUniform3fv(view_pos_location, 1, glm::value_ptr(scene::get()->m_camera_params.position));
+            }
 
             GLint shadow_location = glGetUniformLocation(shader_program, "shadow_map");
             if (shadow_location != -1) {

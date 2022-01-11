@@ -26,11 +26,17 @@ mediump float shadow_amount(mediump vec4 frag_light_pos)
 
 void main()
 {   
+    mediump vec3 norm = normalize(normal_interp);
+
     mediump vec3 light_dir = normalize(light_pos - position_interp.xyz);
-    mediump float light = dot(light_dir, normal_interp);
+    mediump float light = dot(light_dir, norm);
     light *= 1.0 - shadow_amount(pos_in_lightspace);
 
-    out_colour = vec4(colour*light, 1.0);
-    out_normal = vec4(normal_interp, 1.0);
+    mediump vec3 view_dir = normalize(view_pos - position_interp.xyz);
+    mediump vec3 reflect_dir = reflect(-light_dir, norm);
+    mediump float specular = pow(max(dot(view_dir, reflect_dir), 0.0), 64.0);
+
+    out_colour = vec4((colour + specular)*light, 1.0);
+    out_normal = vec4(norm, 1.0);
     out_position = position_interp;
 }

@@ -8,6 +8,7 @@ layout(location = 0) out mediump vec4 out_colour;
 layout(location = 1) out mediump vec4 out_normal;
 layout(location = 2) out mediump vec4 out_position;
 
+uniform mediump vec3 view_pos;
 uniform mediump vec3 light_pos;
 uniform sampler2D shadow_map;
 
@@ -28,11 +29,17 @@ void main()
     mediump float y = floor(uv_interp.y*8.0);
     mediump vec3 tile_colour = mix(vec3(0.5, 0.3, 0.1), vec3(0.77, 0.74, 0.51), mod(x + mod(y,2.0),2.0));
 
-    mediump vec3 light_dir = normalize(light_pos - position_interp.xyz);
-    mediump float light = dot(light_dir, normal_interp);
+    mediump vec3 norm = normalize(normal_interp);
 
+    mediump vec3 light_dir = normalize(light_pos - position_interp.xyz);
+    mediump float light = dot(light_dir, norm);
     light *= 1.0 - shadow_amount(pos_in_lightspace);
-    out_colour = vec4(tile_colour*light, 1.0);
+
+    mediump vec3 view_dir = normalize(view_pos - position_interp.xyz);
+    mediump vec3 reflect_dir = reflect(-light_dir, norm);
+    mediump float specular = pow(max(dot(view_dir, reflect_dir), 0.0), 64.0);
+
+    out_colour = vec4((tile_colour + specular)*light, 1.0);
     out_normal = vec4(normal_interp, 1.0);
     out_position = position_interp;
 }
