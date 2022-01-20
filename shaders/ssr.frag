@@ -137,10 +137,10 @@ reflection_result get_reflection_uv(parameters params, mediump vec4 start, mediu
 
 void main() {
     parameters params;
-    params.max_distance = 200.0;
-    params.resolution = 0.1;
+    params.max_distance = 50.0;
+    params.resolution = 0.01;
     params.steps = 10;
-    params.thickness = 0.3;
+    params.thickness = 0.5;
     params.tex_size = vec2(textureSize(position_tex, 0).xy);
     params.tex_coord = gl_FragCoord.xy / params.tex_size;
 

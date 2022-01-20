@@ -14,7 +14,7 @@ set(SOURCES
     compositor.cpp)
 
 add_executable(chess main.cpp ${SOURCES})
-target_link_libraries(chess -lGL -lEGL -lglfw -lGLEW)
+target_link_libraries(chess -lGL -lEGL -lglfw -lGLEW -lassimp)
 
 add_custom_command(TARGET ${CMAKE_PROJECT_NAME} PRE_BUILD
                    COMMAND ${CMAKE_COMMAND} -E create_symlink

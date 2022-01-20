@@ -48,7 +48,7 @@ namespace graphics
 
             struct
             {
-                glm::vec3 position = glm::vec3(2.0, 2.0, -2.0);
+                glm::vec3 position = glm::vec3(1.26, 2.0, 1.05);
                 glm::vec3 target = glm::vec3(0.0);
                 glm::mat4 projection = glm::ortho(
                     -2.f, 2.0f, -2.f, 2.f, 1.f, 7.5f
