@@ -18,7 +18,7 @@ namespace graphics
         glm::vec2 uv;
     };
 
-    std::vector<vertex> load_vertices_obj(std::string path,
+    std::vector<vertex> load_vertices_bin(std::string path,
         glm::vec3 scale = glm::vec3(1), glm::vec3 offset = glm::vec3(0.f));
 
     class mesh {

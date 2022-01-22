@@ -98,11 +98,12 @@ int main(int num_args, char * args[])
         std::ofstream file(output_path, std::ofstream::out | std::ofstream::binary );
         if (file.is_open()) {
             std::cout << "Writing to " << output_path << std::endl;
-            file << vertices.size() << std::endl;
+            unsigned int num_vertices = vertices.size();
+            file.write((char*)&num_vertices, sizeof(num_vertices));
             for (auto& v : vertices) {
-                file << v.pos.x << " " << v.pos.y << " " << v.pos.z << std::endl;
-                file << v.normal.x << " " << v.normal.y << " " << v.normal.z << std::endl;
-                file << v.tex_coord.u << " " << v.tex_coord.v << std::endl;
+                file.write((char*)&v.pos, sizeof(v.pos));
+                file.write((char*)&v.normal, sizeof(v.normal));
+                file.write((char*)&v.tex_coord, sizeof(v.tex_coord));
             }
             file.close();
         }

@@ -7,157 +7,48 @@
 
 namespace graphics
 {
-    glm::vec2 to_vec2(std::string entry)
-    {
-        // string will look something like this
-        // 
-        // vt number1 number2
-        //   ^       ^
-        // first  second
-        glm::vec2 result;
-        auto first_space = entry.find(' ');
-        auto second_space = entry.find(' ', first_space + 1);
-
-        std::string x_str = entry.substr(first_space + 1, second_space - (first_space+1));
-        std::string y_str = entry.substr(second_space + 1, entry.size() - second_space);
-
-        result.x = std::stof(x_str);
-        result.y = std::stof(y_str);
-
-        return result;
-    }
-
-    glm::vec3 to_vec3(std::string entry)
-    {
-        // string will look something like this
-        //
-        // v number1 number2 number3
-        //  ^       ^       ^
-        // first  second  third
-        glm::vec3 result = {};
-        auto first_space = entry.find(' ');
-        auto second_space = entry.find(' ', first_space + 1);
-        auto third_space = entry.find(' ', second_space + 1);
-
-        std::string x_str = entry.substr(first_space + 1, second_space - (first_space + 1));
-        std::string y_str = entry.substr(second_space + 1, third_space - (second_space + 1));
-        std::string z_str = entry.substr(third_space + 1, entry.size() - third_space);
-
-        result.x = std::stof(x_str);
-        result.y = std::stof(y_str);
-        result.z = std::stof(z_str);
-
-        return result;
-    }
-
-    struct face_entry {
-        int vert_idx = {};
-        int uv_idx = {};
-        int normal_idx = {};
-    };
-
-    face_entry get_face(std::string entry)
-    {
-        // entry will look like number0/number1/number2
-        face_entry result;
-        auto first_slash = entry.find('/');
-        auto second_slash = entry.find('/', first_slash + 1);
-
-        std::string vert_idx_str = entry.substr(0,first_slash);
-        std::string uv_idx_str = entry.substr(first_slash + 1, second_slash - (first_slash + 1));
-        std::string normal_idx_str = entry.substr(second_slash + 1, entry.size() - second_slash);
-
-        if (not vert_idx_str.empty()) {
-            result.vert_idx = std::stoi(vert_idx_str) - 1;
-        }
-
-        if (not uv_idx_str.empty()) {
-            result.uv_idx = std::stoi(uv_idx_str) - 1;
-        }
-        
-        if (not normal_idx_str.empty()) {
-            result.normal_idx = std::stoi(normal_idx_str) - 1;
-        }
-        
-        return result;
-    }
-
-    std::vector<face_entry> get_faces(std::string entry)
-    {
-        std::vector<face_entry> result;
-
-        auto first_space = entry.find(' ');
-        auto second_space = entry.find(' ', first_space + 1);
-        auto third_space = entry.find(' ', second_space + 1);
-
-        std::string v0_str = entry.substr(first_space + 1, second_space - (first_space + 1));
-        std::string v1_str = entry.substr(second_space + 1, third_space - (second_space + 1));
-        std::string v2_str = entry.substr(third_space + 1, entry.size() - third_space);
-
-        result.push_back(get_face(v0_str));
-        result.push_back(get_face(v1_str));
-        result.push_back(get_face(v2_str));
-
-        return result;
-    }
-
-    std::vector<vertex> load_vertices_obj(std::string path, glm::vec3 scale, glm::vec3 offset)
+    std::vector<vertex> load_vertices_bin(std::string path, glm::vec3 scale, glm::vec3 offset)
     {
         std::vector<vertex> result;
-        std::ifstream file(path);
-        std::vector<glm::vec3> vertices;
-        std::vector<glm::vec2> uvs;
-        std::vector<glm::vec3> normals;
+        std::ifstream file(path, std::ifstream::in | std::ifstream::binary);
+        if (file.is_open())
+        {
+            unsigned int num_vertices = 0;
+            file.read((char*)&num_vertices, sizeof(num_vertices));
 
-        if (file.is_open()) {
-            while(not file.eof()) {
-                std::string line = "";
-                std::getline(file, line);
-                if (line.size() > 2) {
-                    switch(line[0]) {
-                        case 'v':
-                        {
-                            switch(line[1]) {
-                                case 't': {
-                                    uvs.push_back(to_vec2(line));
-                                } break;
+            for (int idx = 0 ; idx < num_vertices ; idx++) {
+                vertex vert;
 
-                                case 'n': {
-                                    normals.push_back(to_vec3(line));
-                                } break;
-
-                                default: {
-                                    glm::vec3 vert = to_vec3(line);
-                                    vert *= scale;
-                                    vert += offset;
-                                    vertices.push_back(vert);
-                                } break;
-                            }
-                        } break;
-                        
-                        case 'f':
-                        {
-                            auto faces = get_faces(line);
-                            for (auto& face : faces) {
-                                vertex vert;
-                                vert.pos = vertices[face.vert_idx];
-                                if (not uvs.empty()) {
-                                    vert.uv = uvs[face.uv_idx];
-                                }
-                                if (not normals.empty()) {
-                                    vert.normal = normals[face.normal_idx];
-                                }
-                                result.push_back(vert);
-                            }
-                        } break;
-                        default:
-                            // not supported
-                            break;
-                    }
+                {
+                    float xyz[3] = {};
+                    file.read((char*)xyz,sizeof(xyz));
+                    vert.pos.x = xyz[0];
+                    vert.pos.y = xyz[1];
+                    vert.pos.z = xyz[2];
+                    vert.pos *= scale;
+                    vert.pos += offset;
                 }
+                
+                {
+                    float xyz[3] = {};
+                    file.read((char*)xyz,sizeof(xyz));
+                    vert.normal.x = xyz[0];
+                    vert.normal.y = xyz[1];
+                    vert.normal.z = xyz[2];
+                }
+
+                {
+                    float uv[2] = {};
+                    file.read((char*)uv,sizeof(uv));
+                    vert.uv.x = uv[0];
+                    vert.uv.y = uv[1];
+                }
+
+                result.push_back(vert);
             }
+
             file.close();
-        }        
+        }
         return result;
     }
 

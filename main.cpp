@@ -76,45 +76,40 @@ std::map<std::string, std::shared_ptr<graphics::mesh>> g_meshes;
 void load_meshes()
 {
     g_meshes["board"] = std::make_shared<graphics::mesh>(
-        graphics::load_vertices_obj("meshes/plane.obj", glm::vec3(0.05f))
+        graphics::load_vertices_bin("meshes/plane.bin", glm::vec3(0.05f))
     );
 
     g_meshes["pawn"] = std::make_shared<graphics::mesh>(
-        graphics::load_vertices_obj("meshes/pawn.obj", glm::vec3(0.05f))
+        graphics::load_vertices_bin("meshes/pawn.bin", glm::vec3(0.05f))
     );
 
     g_meshes["bishop"] = std::make_shared<graphics::mesh>(
-        graphics::load_vertices_obj("meshes/bishop.obj", glm::vec3(0.05f))
+        graphics::load_vertices_bin("meshes/bishop.bin", glm::vec3(0.05f))
     );
 
     g_meshes["knight"] = std::make_shared<graphics::mesh>(
-        graphics::load_vertices_obj("meshes/knight.obj", glm::vec3(0.05f))
+        graphics::load_vertices_bin("meshes/knight.bin", glm::vec3(0.05f))
     );
 
     g_meshes["rook"] = std::make_shared<graphics::mesh>(
-        graphics::load_vertices_obj("meshes/rook.obj", glm::vec3(0.05f))
+        graphics::load_vertices_bin("meshes/rook.bin", glm::vec3(0.05f))
     );
 
     g_meshes["queen"] = std::make_shared<graphics::mesh>(
-        graphics::load_vertices_obj("meshes/queen.obj", glm::vec3(0.05f))
+        graphics::load_vertices_bin("meshes/queen.bin", glm::vec3(0.05f))
     );
 
     g_meshes["king"] = std::make_shared<graphics::mesh>(
-        graphics::load_vertices_obj("meshes/king.obj", glm::vec3(0.05f))
+        graphics::load_vertices_bin("meshes/king.bin", glm::vec3(0.05f))
     );
 
     g_meshes["unknown"] = std::make_shared<graphics::mesh>(
-        graphics::load_vertices_obj("meshes/unknown.obj", glm::vec3(0.05f))
+        graphics::load_vertices_bin("meshes/unknown.bin", glm::vec3(0.05f))
     );
 
     g_meshes["cube"] = std::make_shared<graphics::mesh>(
-        graphics::load_vertices_obj("meshes/cube.obj", glm::vec3(0.05f))
+        graphics::load_vertices_bin("meshes/cube.bin", glm::vec3(0.05f))
     );
-}
-
-void load_scene_file(std::string filepath)
-{
-    
 }
 
 int main()
@@ -143,8 +138,6 @@ int main()
 
     load_shaders();
     load_meshes();
-
-    load_scene_file("scenes/test.scene");
 
     chess::board_state initial_board;
     chess::piece_colour current_player = chess::white;
