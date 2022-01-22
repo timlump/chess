@@ -14,7 +14,10 @@ set(SOURCES
     compositor.cpp)
 
 add_executable(chess main.cpp ${SOURCES})
-target_link_libraries(chess -lGL -lEGL -lglfw -lGLEW -lassimp)
+add_executable(model_convert convert.cpp)
+
+target_link_libraries(chess -lGL -lEGL -lglfw -lGLEW)
+target_link_libraries(model_convert -lassimp)
 
 add_custom_command(TARGET ${CMAKE_PROJECT_NAME} PRE_BUILD
                    COMMAND ${CMAKE_COMMAND} -E create_symlink
@@ -27,7 +30,3 @@ add_custom_command(TARGET ${CMAKE_PROJECT_NAME} PRE_BUILD
 add_custom_command(TARGET ${CMAKE_PROJECT_NAME} PRE_BUILD
                    COMMAND ${CMAKE_COMMAND} -E create_symlink
                    ${CMAKE_SOURCE_DIR}/scenes $<TARGET_FILE_DIR:${PROJECT_NAME}>/scenes)
-
-set(CPACK_PROJECT_NAME ${PROJECT_NAME})
-set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
-include(CPack)
