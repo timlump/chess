@@ -18,31 +18,10 @@ namespace graphics
 
             for (int idx = 0 ; idx < num_vertices ; idx++) {
                 vertex vert;
-
-                {
-                    float xyz[3] = {};
-                    file.read((char*)xyz,sizeof(xyz));
-                    vert.pos.x = xyz[0];
-                    vert.pos.y = xyz[1];
-                    vert.pos.z = xyz[2];
-                    vert.pos *= scale;
-                    vert.pos += offset;
-                }
                 
-                {
-                    float xyz[3] = {};
-                    file.read((char*)xyz,sizeof(xyz));
-                    vert.normal.x = xyz[0];
-                    vert.normal.y = xyz[1];
-                    vert.normal.z = xyz[2];
-                }
-
-                {
-                    float uv[2] = {};
-                    file.read((char*)uv,sizeof(uv));
-                    vert.uv.x = uv[0];
-                    vert.uv.y = uv[1];
-                }
+                vert.deserialise(file);
+                vert.pos *= scale;
+                vert.pos += offset;
 
                 result.push_back(vert);
             }

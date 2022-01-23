@@ -7,25 +7,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-struct vertex
-{
-    struct {
-        float x;
-        float y;
-        float z;
-    } pos;
-
-    struct {
-        float x;
-        float y;
-        float z;
-    } normal;
-
-    struct {
-        float u = 0.f;
-        float v = 0.f;
-    } tex_coord;
-};
+#include "vertex.h"
 
 /*
     output bin format:
@@ -56,7 +38,7 @@ int main(int num_args, char * args[])
     );
 
     if (scene) {
-        std::vector<vertex> vertices;
+        std::vector<graphics::vertex> vertices;
 
         for (int mesh_idx = 0 ; mesh_idx < scene->mNumMeshes ; mesh_idx++) {
             auto mesh = scene->mMeshes[mesh_idx];
@@ -67,7 +49,7 @@ int main(int num_args, char * args[])
                 for (int index_idx = 0 ; index_idx < face.mNumIndices ; index_idx++) {
                     int idx = face.mIndices[index_idx];
 
-                    vertex vert;
+                    graphics::vertex vert;
                     {
                         auto v = mesh->mVertices[idx];
                         vert.pos.x = v.x;
@@ -84,14 +66,17 @@ int main(int num_args, char * args[])
 
                     if (mesh->HasTextureCoords(0)) {
                         auto uv = mesh->mTextureCoords[0][idx];
-                        vert.tex_coord.u = uv.x;
-                        vert.tex_coord.v = uv.y;
+                        vert.uv.x = uv.x;
+                        vert.uv.y = uv.y;
                     }
 
                     vertices.push_back(vert);
                 }
             }
             
+            for (int bone_idx = 0 ; bone_idx < mesh->mNumBones ; bone_idx++) {
+                
+            }
         }
 
         // write out
@@ -101,9 +86,7 @@ int main(int num_args, char * args[])
             unsigned int num_vertices = vertices.size();
             file.write((char*)&num_vertices, sizeof(num_vertices));
             for (auto& v : vertices) {
-                file.write((char*)&v.pos, sizeof(v.pos));
-                file.write((char*)&v.normal, sizeof(v.normal));
-                file.write((char*)&v.tex_coord, sizeof(v.tex_coord));
+                v.serialise(file);
             }
             file.close();
         }
