@@ -13,6 +13,24 @@
 
 namespace graphics
 {
+    /*
+        output bin format:
+            num_vertices : unsigned int
+                pos 
+                normal
+                uv
+                bone id 0 - 3
+                bone weight 0 - 3
+                .
+                .
+                .
+            num_bones : unsigned int
+                offset_matrix
+                .
+                .
+                .
+        tbd
+    */
     std::vector<vertex> load_vertices_bin(std::string path,
         glm::vec3 scale = glm::vec3(1), glm::vec3 offset = glm::vec3(0.f));
 

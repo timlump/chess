@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <map>
 #include <fstream>
 
 #include <assimp/Importer.hpp>
@@ -9,18 +10,12 @@
 
 #include "vertex.h"
 
-/*
-    output bin format:
-        num_vertices : unsigned int
-            pos_x pos_y pos_z : float
-            norm_x norm_y norm_z : float
-            uv_u uv_v : float
-            .
-            .
-            .
-        
-    tbd
-*/
+struct vert_bone_pair
+{
+    int bone_idx;
+    float weight;
+};
+
 int main(int num_args, char * args[])
 {
     if (num_args != 3) {
@@ -38,44 +33,84 @@ int main(int num_args, char * args[])
     );
 
     if (scene) {
+    
         std::vector<graphics::vertex> vertices;
+        std::vector<graphics::bone> bones;
+        std::map<int,std::vector<vert_bone_pair>> vert_to_bone_map;
+
+        std::cout << "Exporting meshes:\n";
+        if (scene->mNumMeshes != 1) {
+            std::cerr << "Only supports 1 mesh at the moment\n";
+            return -1;
+        }
 
         for (int mesh_idx = 0 ; mesh_idx < scene->mNumMeshes ; mesh_idx++) {
             auto mesh = scene->mMeshes[mesh_idx];
+            // do bones first as for simplicity we drop indices so it'll be more work to associate the bones later
+            std::cout << "Exporting bones:\n";
+            for (int bone_idx = 0 ; bone_idx < mesh->mNumBones ; bone_idx++) {
+                auto bone = mesh->mBones[bone_idx];
+                std::cout << "Bone: " << std::string(bone->mName.C_Str()) << std::endl;
+                auto offset_matrix = bone->mOffsetMatrix;
+
+                graphics::bone bone_data;
+                for (int row = 0; row < 4; row++) {
+                    for (int col = 0; col < 4; col++) {
+                        bone_data.offset_matrix[col][row] = offset_matrix[col][row];
+                    }
+                }
+                bones.push_back(bone_data);
+
+                for (int weight_idx = 0 ; weight_idx < bone->mNumWeights ; weight_idx++) {
+                    auto weight = bone->mWeights[weight_idx];
+                    
+                    vert_bone_pair pair;
+                    pair.bone_idx = bone_idx;
+                    pair.weight = weight.mWeight;
+
+                    vert_to_bone_map[weight.mVertexId].push_back(pair);
+                }
+            }
+
             std::cout << "Mesh: " << std::string(mesh->mName.C_Str()) << std::endl;
             for (int face_idx = 0 ; face_idx < mesh->mNumFaces ; face_idx++) {
                 auto face = mesh->mFaces[face_idx];
 
                 for (int index_idx = 0 ; index_idx < face.mNumIndices ; index_idx++) {
-                    int idx = face.mIndices[index_idx];
+                    int vert_idx = face.mIndices[index_idx];
 
                     graphics::vertex vert;
                     {
-                        auto v = mesh->mVertices[idx];
-                        vert.pos.x = v.x;
-                        vert.pos.y = v.y;
-                        vert.pos.z = v.z;
+                        auto v = mesh->mVertices[vert_idx];
+                        vert.pos = {v.x, v.y, v.z};
                     }
                     
                     {
-                        auto n = mesh->mNormals[idx];
-                        vert.normal.x = n.x;
-                        vert.normal.y = n.y;
-                        vert.normal.z = n.z;
+                        auto n = mesh->mNormals[vert_idx];
+                        vert.normal = {n.x, n.y, n.z};
                     }
 
                     if (mesh->HasTextureCoords(0)) {
-                        auto uv = mesh->mTextureCoords[0][idx];
-                        vert.uv.x = uv.x;
-                        vert.uv.y = uv.y;
+                        auto uv = mesh->mTextureCoords[0][vert_idx];
+                        vert.uv = {uv.x, uv.y};
+                    }
+
+                    auto vert_to_bone_entry = vert_to_bone_map.find(vert_idx);
+                    if (vert_to_bone_entry != vert_to_bone_map.end()) {
+                        int num_bones = vert_to_bone_entry->second.size();
+                        if (num_bones > 4) {
+                            std::cerr << "More than 4 bones for a vertex, only using first 4\n";
+                            num_bones = 4;
+                        }
+                        for (int bone_idx = 0; bone_idx < num_bones ; bone_idx++) {
+                            auto bone = vert_to_bone_entry->second[bone_idx];
+                            vert.bone_ids[bone_idx] = bone.bone_idx;
+                            vert.bone_weights[bone_idx] = bone.weight;
+                        }
                     }
 
                     vertices.push_back(vert);
                 }
-            }
-            
-            for (int bone_idx = 0 ; bone_idx < mesh->mNumBones ; bone_idx++) {
-                
             }
         }
 
