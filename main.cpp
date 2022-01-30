@@ -1,3 +1,9 @@
+extern "C" {
+    #include <lua5.1/lua.h>
+    #include <lua5.1/lualib.h>
+    #include <lua5.1/lauxlib.h>
+}
+
 #include "chess.h"
 #include "scene.h"
 #include "primitives.h"
@@ -76,43 +82,139 @@ std::map<std::string, std::shared_ptr<graphics::mesh>> g_meshes;
 void load_meshes()
 {
     g_meshes["board"] = std::make_shared<graphics::mesh>(
-        graphics::load_vertices_bin("meshes/plane.bin", glm::vec3(0.05f))
+        graphics::load_model("meshes/plane.bin", glm::vec3(0.05f)).vertices
     );
 
     g_meshes["pawn"] = std::make_shared<graphics::mesh>(
-        graphics::load_vertices_bin("meshes/pawn.bin", glm::vec3(0.05f))
+        graphics::load_model("meshes/pawn.bin", glm::vec3(0.05f)).vertices
     );
 
     g_meshes["bishop"] = std::make_shared<graphics::mesh>(
-        graphics::load_vertices_bin("meshes/bishop.bin", glm::vec3(0.05f))
+        graphics::load_model("meshes/bishop.bin", glm::vec3(0.05f)).vertices
     );
 
     g_meshes["knight"] = std::make_shared<graphics::mesh>(
-        graphics::load_vertices_bin("meshes/knight.bin", glm::vec3(0.05f))
+        graphics::load_model("meshes/knight.bin", glm::vec3(0.05f)).vertices
     );
 
     g_meshes["rook"] = std::make_shared<graphics::mesh>(
-        graphics::load_vertices_bin("meshes/rook.bin", glm::vec3(0.05f))
+        graphics::load_model("meshes/rook.bin", glm::vec3(0.05f)).vertices
     );
 
     g_meshes["queen"] = std::make_shared<graphics::mesh>(
-        graphics::load_vertices_bin("meshes/queen.bin", glm::vec3(0.05f))
+        graphics::load_model("meshes/queen.bin", glm::vec3(0.05f)).vertices
     );
 
     g_meshes["king"] = std::make_shared<graphics::mesh>(
-        graphics::load_vertices_bin("meshes/king.bin", glm::vec3(0.05f))
+        graphics::load_model("meshes/king.bin", glm::vec3(0.05f)).vertices
     );
 
     g_meshes["unknown"] = std::make_shared<graphics::mesh>(
-        graphics::load_vertices_bin("meshes/unknown.bin", glm::vec3(0.05f))
+        graphics::load_model("meshes/unknown.bin", glm::vec3(0.05f)).vertices
     );
 
     g_meshes["cube"] = std::make_shared<graphics::mesh>(
-        graphics::load_vertices_bin("meshes/cube.bin", glm::vec3(0.05f))
+        graphics::load_model("meshes/cube.bin", glm::vec3(0.05f)).vertices
     );
 }
 
+void setup_game();
+
 int main()
+{
+    lua_State *lua_state = luaL_newstate();
+    luaL_openlibs(lua_state);
+
+    std::string code = "print('Hello, World')";
+    if (luaL_loadstring(lua_state, code.c_str()) == 0) {
+        if (lua_pcall(lua_state, 0, 0, 0) == 0) {
+            lua_pop(lua_state, lua_gettop(lua_state));
+        }
+    }
+
+    setup_game();
+
+    lua_close(lua_state);
+
+    return 0;
+}
+
+void error_callback(int error, const char * description)
+{
+    std::cerr << "Error: " << error << std::endl;
+    std::cerr << description << std::endl;
+}
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    switch (key) {
+        case GLFW_KEY_R:
+        {
+            reload_shaders();
+        } break;
+
+        case GLFW_KEY_UP:
+        {
+            graphics::scene::get()->m_light_params.position.z -= 0.01f;
+        } break;
+
+        case GLFW_KEY_DOWN:
+        {
+            graphics::scene::get()->m_light_params.position.z += 0.01f;
+        } break;
+
+        case GLFW_KEY_LEFT:
+        {
+            graphics::scene::get()->m_light_params.position.x -= 0.01f;
+        } break;
+
+        case GLFW_KEY_RIGHT:
+        {
+            graphics::scene::get()->m_light_params.position.x += 0.01f;
+        } break;
+    }
+}
+
+void mouse_pos_callback(GLFWwindow* window, double x, double y)
+{
+    mouse_state.x = x;
+    mouse_state.y = y;
+}
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+    switch(button)
+    {
+        case GLFW_MOUSE_BUTTON_LEFT:
+        {
+            mouse_state.left_button = (action == GLFW_PRESS);
+        } break;
+
+        case GLFW_MOUSE_BUTTON_RIGHT:
+        {
+            mouse_state.right_button = (action == GLFW_PRESS);
+        } break;
+
+        case GLFW_MOUSE_BUTTON_MIDDLE:
+        {
+            mouse_state.middle_button = (action == GLFW_PRESS);
+        } break;
+    }
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    camera_state.fov -= yoffset;
+    if (camera_state.fov < 10.0) {
+        camera_state.fov = 10.0;
+    }
+    
+    if (camera_state.fov > 200.0) {
+        camera_state.fov = 200.0;
+    }
+}
+
+void setup_game()
 {
     int width = 1024;
     int height = 768;
@@ -275,81 +377,4 @@ int main()
     }
 
     glfwTerminate();
-
-    return 0;
-}
-
-void error_callback(int error, const char * description)
-{
-    std::cerr << "Error: " << error << std::endl;
-    std::cerr << description << std::endl;
-}
-
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-    switch (key) {
-        case GLFW_KEY_R:
-        {
-            reload_shaders();
-        } break;
-
-        case GLFW_KEY_UP:
-        {
-            graphics::scene::get()->m_light_params.position.z -= 0.01f;
-        } break;
-
-        case GLFW_KEY_DOWN:
-        {
-            graphics::scene::get()->m_light_params.position.z += 0.01f;
-        } break;
-
-        case GLFW_KEY_LEFT:
-        {
-            graphics::scene::get()->m_light_params.position.x -= 0.01f;
-        } break;
-
-        case GLFW_KEY_RIGHT:
-        {
-            graphics::scene::get()->m_light_params.position.x += 0.01f;
-        } break;
-    }
-}
-
-void mouse_pos_callback(GLFWwindow* window, double x, double y)
-{
-    mouse_state.x = x;
-    mouse_state.y = y;
-}
-
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
-{
-    switch(button)
-    {
-        case GLFW_MOUSE_BUTTON_LEFT:
-        {
-            mouse_state.left_button = (action == GLFW_PRESS);
-        } break;
-
-        case GLFW_MOUSE_BUTTON_RIGHT:
-        {
-            mouse_state.right_button = (action == GLFW_PRESS);
-        } break;
-
-        case GLFW_MOUSE_BUTTON_MIDDLE:
-        {
-            mouse_state.middle_button = (action == GLFW_PRESS);
-        } break;
-    }
-}
-
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{
-    camera_state.fov -= yoffset;
-    if (camera_state.fov < 10.0) {
-        camera_state.fov = 10.0;
-    }
-    
-    if (camera_state.fov > 200.0) {
-        camera_state.fov = 200.0;
-    }
 }

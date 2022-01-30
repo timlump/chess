@@ -7,9 +7,9 @@
 
 namespace graphics
 {
-    std::vector<vertex> load_vertices_bin(std::string path, glm::vec3 scale, glm::vec3 offset)
+    model_data load_model(std::string path, glm::vec3 scale, glm::vec3 offset)
     {
-        std::vector<vertex> result;
+        model_data result;
         std::ifstream file(path, std::ifstream::in | std::ifstream::binary);
         if (file.is_open())
         {
@@ -23,7 +23,7 @@ namespace graphics
                 vert.pos *= scale;
                 vert.pos += offset;
 
-                result.push_back(vert);
+                result.vertices.push_back(vert);
             }
 
             file.close();

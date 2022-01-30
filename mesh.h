@@ -25,13 +25,19 @@ namespace graphics
                 .
                 .
             num_bones : unsigned int
+                parent_bone_idx
                 offset_matrix
                 .
                 .
                 .
         tbd
     */
-    std::vector<vertex> load_vertices_bin(std::string path,
+    struct model_data
+    {
+        std::vector<vertex> vertices;
+    };
+
+    model_data load_model(std::string path,
         glm::vec3 scale = glm::vec3(1), glm::vec3 offset = glm::vec3(0.f));
 
     class mesh {

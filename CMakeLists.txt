@@ -16,7 +16,7 @@ set(SOURCES
 add_executable(chess main.cpp ${SOURCES})
 add_executable(model_convert convert.cpp)
 
-target_link_libraries(chess -lGL -lEGL -lglfw -lGLEW)
+target_link_libraries(chess -lGL -lEGL -lglfw -lGLEW -llua5.1)
 target_link_libraries(model_convert -lassimp)
 
 add_custom_command(TARGET ${CMAKE_PROJECT_NAME} PRE_BUILD

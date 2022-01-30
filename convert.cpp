@@ -16,6 +16,12 @@ struct vert_bone_pair
     float weight;
 };
 
+struct bone_parent_pair
+{
+    int bone_idx;
+    int parent_idx = -1;
+};
+
 int main(int num_args, char * args[])
 {
     if (num_args != 3) {
@@ -37,8 +43,9 @@ int main(int num_args, char * args[])
         std::vector<graphics::vertex> vertices;
         std::vector<graphics::bone> bones;
         std::map<int,std::vector<vert_bone_pair>> vert_to_bone_map;
+        std::map<std::string,int> bone_name_to_idx;
+        std::vector<bone_parent_pair> bone_hierarchy_info;
 
-        std::cout << "Exporting meshes:\n";
         if (scene->mNumMeshes != 1) {
             std::cerr << "Only supports 1 mesh at the moment\n";
             return -1;
@@ -59,6 +66,8 @@ int main(int num_args, char * args[])
                         bone_data.offset_matrix[col][row] = offset_matrix[col][row];
                     }
                 }
+
+                bone_name_to_idx[std::string(bone->mName.C_Str())] = bone_idx;
                 bones.push_back(bone_data);
 
                 for (int weight_idx = 0 ; weight_idx < bone->mNumWeights ; weight_idx++) {
@@ -72,6 +81,28 @@ int main(int num_args, char * args[])
                 }
             }
 
+            for (auto bone_entry : bone_name_to_idx) {
+                auto bone_node = scene->mRootNode->FindNode(bone_entry.first.c_str());
+                if (bone_node) {
+                    std::string current_node_name(bone_node->mName.C_Str());
+                    std::string parent_node_name(bone_node->mParent->mName.C_Str());
+
+                    bone_parent_pair pair;
+                    pair.bone_idx = bone_name_to_idx[current_node_name];
+
+                    auto parent_iter = bone_name_to_idx.find(parent_node_name);
+                    if (parent_iter != bone_name_to_idx.end()) {
+                        pair.parent_idx = parent_iter->second;
+                    }
+                    bone_hierarchy_info.push_back(pair);
+                }
+                else {
+                    std::cerr << "Can't find bone: " << bone_entry.first << std::endl;
+                    return -1;
+                }
+            }
+
+            std::cout << "Exporting meshes:\n";
             std::cout << "Mesh: " << std::string(mesh->mName.C_Str()) << std::endl;
             for (int face_idx = 0 ; face_idx < mesh->mNumFaces ; face_idx++) {
                 auto face = mesh->mFaces[face_idx];
