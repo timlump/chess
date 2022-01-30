@@ -18,6 +18,16 @@ void mouse_pos_callback(GLFWwindow* window, double x, double y);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
+struct
+{
+    lua_State * lua_state = nullptr;
+    int width = 1024;
+    int height = 768;
+    GLFWwindow *window = nullptr;
+    std::map<std::string, std::shared_ptr<graphics::mesh>> meshes;
+    std::map<std::string, std::shared_ptr<graphics::shader>> shaders;
+} game_state;
+
 // state
 struct
 {
@@ -44,97 +54,98 @@ struct piece
     std::shared_ptr<graphics::mesh_instance> instance;
 };
 
-std::map<std::string, std::shared_ptr<graphics::shader>> g_shaders;
 void load_shaders()
 {
-    g_shaders["id"] = std::make_shared<graphics::shader>(
+    game_state.shaders["id"] = std::make_shared<graphics::shader>(
         "shaders/id.vert", "shaders/id.frag"
     );
 
-    g_shaders["shadow"] = std::make_shared<graphics::shader>(
+    game_state.shaders["shadow"] = std::make_shared<graphics::shader>(
         "shaders/shadow.vert", "shaders/shadow.frag"
     );
 
-    g_shaders["board"] = std::make_shared<graphics::shader>(
+    game_state.shaders["board"] = std::make_shared<graphics::shader>(
         "shaders/default.vert", "shaders/checker.frag"
     );
 
-    g_shaders["piece"] = std::make_shared<graphics::shader>(
+    game_state.shaders["piece"] = std::make_shared<graphics::shader>(
         "shaders/default.vert", "shaders/piece.frag"
     );
 
-    g_shaders["passthrough"] = std::make_shared<graphics::shader>(
+    game_state.shaders["passthrough"] = std::make_shared<graphics::shader>(
         "shaders/passthrough.vert", "shaders/passthrough.frag"  
     );
 
-    g_shaders["ssr"] = std::make_shared<graphics::shader>(
+    game_state.shaders["ssr"] = std::make_shared<graphics::shader>(
         "shaders/passthrough.vert", "shaders/ssr.frag"  
     );
 }
+
 void reload_shaders()
 {
-    for (auto& shader : g_shaders) {
+    for (auto& shader : game_state.shaders) {
         shader.second->reload();
     }
 }
 
-std::map<std::string, std::shared_ptr<graphics::mesh>> g_meshes;
-void load_meshes()
+// load_mesh(name, path, scale)
+int load_mesh(lua_State* state)
 {
-    g_meshes["board"] = std::make_shared<graphics::mesh>(
-        graphics::load_model("meshes/plane.bin", glm::vec3(0.05f)).vertices
-    );
+    std::string name = luaL_checkstring(state, 1);
+    std::string filename = luaL_checkstring(state, 2);
+    double scale = luaL_checknumber(state,3);
 
-    g_meshes["pawn"] = std::make_shared<graphics::mesh>(
-        graphics::load_model("meshes/pawn.bin", glm::vec3(0.05f)).vertices
-    );
 
-    g_meshes["bishop"] = std::make_shared<graphics::mesh>(
-        graphics::load_model("meshes/bishop.bin", glm::vec3(0.05f)).vertices
-    );
+    if (game_state.meshes.find(name) != game_state.meshes.end()) 
+    {
+        return -1;
+    }
 
-    g_meshes["knight"] = std::make_shared<graphics::mesh>(
-        graphics::load_model("meshes/knight.bin", glm::vec3(0.05f)).vertices
+    auto mesh = std::make_shared<graphics::mesh>(
+        graphics::load_model(filename, glm::vec3(scale)).vertices
     );
+    game_state.meshes[name] = mesh;
 
-    g_meshes["rook"] = std::make_shared<graphics::mesh>(
-        graphics::load_model("meshes/rook.bin", glm::vec3(0.05f)).vertices
-    );
-
-    g_meshes["queen"] = std::make_shared<graphics::mesh>(
-        graphics::load_model("meshes/queen.bin", glm::vec3(0.05f)).vertices
-    );
-
-    g_meshes["king"] = std::make_shared<graphics::mesh>(
-        graphics::load_model("meshes/king.bin", glm::vec3(0.05f)).vertices
-    );
-
-    g_meshes["unknown"] = std::make_shared<graphics::mesh>(
-        graphics::load_model("meshes/unknown.bin", glm::vec3(0.05f)).vertices
-    );
-
-    g_meshes["cube"] = std::make_shared<graphics::mesh>(
-        graphics::load_model("meshes/cube.bin", glm::vec3(0.05f)).vertices
-    );
+    return 1;
 }
 
+void load_meshes()
+{
+    
+    
+}
+
+void setup_subsystems();
 void setup_game();
+void game_loop();
 
 int main()
 {
-    lua_State *lua_state = luaL_newstate();
-    luaL_openlibs(lua_state);
+    game_state.lua_state = luaL_newstate();
+    luaL_openlibs(game_state.lua_state);
 
-    std::string code = "print('Hello, World')";
-    if (luaL_loadstring(lua_state, code.c_str()) == 0) {
-        if (lua_pcall(lua_state, 0, 0, 0) == 0) {
-            lua_pop(lua_state, lua_gettop(lua_state));
+    // hook up functions to lua
+    lua_pushcfunction(game_state.lua_state, load_mesh);
+    lua_setglobal(game_state.lua_state, "load_mesh");
+
+    setup_subsystems();
+    graphics::scene::get(); // call this to create the singleton
+
+    if (luaL_dofile(game_state.lua_state, "scripts/init.lua") == 0) {
+        if (lua_pcall(game_state.lua_state, 0, 0, 0) == 0) {
+            lua_pop(game_state.lua_state, lua_gettop(game_state.lua_state));
         }
+    }
+    else {
+        std::string error_string = lua_tostring(game_state.lua_state, lua_gettop(game_state.lua_state));
+        lua_pop(game_state.lua_state, lua_gettop(game_state.lua_state));
+        std::cerr << "Lua Error: " << error_string << std::endl;
     }
 
     setup_game();
+    game_loop();
 
-    lua_close(lua_state);
+    lua_close(game_state.lua_state);
 
     return 0;
 }
@@ -214,28 +225,31 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
     }
 }
 
-void setup_game()
+void setup_subsystems()
 {
-    int width = 1024;
-    int height = 768;
+    int width = game_state.width;
+    int height = game_state.height;
     if (not glfwInit()) {
         throw std::runtime_error("unable to initialize glfw");
     }
 
     glfwSetErrorCallback(error_callback);
 
-    GLFWwindow *window = glfwCreateWindow(width, height, "Chess", nullptr, nullptr);
-    if (not window) {
+    game_state.window = glfwCreateWindow(game_state.width, game_state.height, "Chess", nullptr, nullptr);
+    if (not game_state.window) {
         glfwTerminate();
         throw std::runtime_error("unable to create window");
     }
 
-    glfwMakeContextCurrent(window);
-    glfwSetKeyCallback(window, key_callback);
-    glfwSetCursorPosCallback(window, mouse_pos_callback);
-    glfwSetMouseButtonCallback(window, mouse_button_callback);
-    glfwSetScrollCallback(window, scroll_callback);
+    glfwMakeContextCurrent(game_state.window);
+    glfwSetKeyCallback(game_state.window, key_callback);
+    glfwSetCursorPosCallback(game_state.window, mouse_pos_callback);
+    glfwSetMouseButtonCallback(game_state.window, mouse_button_callback);
+    glfwSetScrollCallback(game_state.window, scroll_callback);
+}
 
+void setup_game()
+{
     auto scene_ctx = graphics::scene::get();
 
     load_shaders();
@@ -248,9 +262,9 @@ void setup_game()
     
     auto board = std::make_shared<graphics::mesh_instance>();
     {
-        board->m_mesh = g_meshes["board"];
-        board->m_shaders_layers[0] = g_shaders["board"];
-        board->m_shaders_layers[1] = g_shaders["shadow"];
+        board->m_mesh = game_state.meshes["board"];
+        board->m_shaders_layers[0] = game_state.shaders["board"];
+        board->m_shaders_layers[1] = game_state.shaders["shadow"];
     }
 
     float board_side_width = board->m_mesh->m_max_dims.x - board->m_mesh->m_min_dims.x;
@@ -277,22 +291,22 @@ void setup_game()
                 switch (type) {
                     case chess::pawn:
                     {
-                        mesh_instance->m_mesh = g_meshes["pawn"];
+                        mesh_instance->m_mesh = game_state.meshes["pawn"];
                     } break;
 
                     case chess::bishop:
                     {
-                        mesh_instance->m_mesh = g_meshes["bishop"];
+                        mesh_instance->m_mesh = game_state.meshes["bishop"];
                     } break;
 
                     case chess::rook:
                     {
-                        mesh_instance->m_mesh = g_meshes["rook"];
+                        mesh_instance->m_mesh = game_state.meshes["rook"];
                     } break;
 
                     case chess::knight:
                     {
-                        mesh_instance->m_mesh = g_meshes["knight"];
+                        mesh_instance->m_mesh = game_state.meshes["knight"];
                         if (colour == chess::black) {
                             mesh_instance->m_y_rotation = glm::radians(180.f);
                         }
@@ -300,16 +314,16 @@ void setup_game()
 
                     case chess::queen:
                     {
-                        mesh_instance->m_mesh = g_meshes["queen"];
+                        mesh_instance->m_mesh = game_state.meshes["queen"];
                     } break;
 
                     case chess::king:
                     {
-                        mesh_instance->m_mesh = g_meshes["king"];
+                        mesh_instance->m_mesh = game_state.meshes["king"];
                     } break;
 
                     default:
-                        mesh_instance->m_mesh = g_meshes["unknown"];
+                        mesh_instance->m_mesh = game_state.meshes["unknown"];
                 };
 
                 mesh_instance->m_colour = (colour == chess::black) ?
@@ -317,8 +331,8 @@ void setup_game()
 
                 float piece_width = mesh_instance->m_mesh->m_max_dims.x - mesh_instance->m_mesh->m_min_dims.x;
 
-                mesh_instance->m_shaders_layers[0] = g_shaders["piece"];
-                mesh_instance->m_shaders_layers[1] = g_shaders["shadow"];
+                mesh_instance->m_shaders_layers[0] = game_state.shaders["piece"];
+                mesh_instance->m_shaders_layers[1] = game_state.shaders["shadow"];
 
                 mesh_instance->m_position.x = 
                     (tile_width*x) + (piece_width/2) - (board_side_width/2);
@@ -332,48 +346,30 @@ void setup_game()
             }
         }
     }
+}
 
+void game_loop()
+{
     graphics::compositor compositor;
-    compositor.m_shader = g_shaders["passthrough"];
+    compositor.m_shader = game_state.shaders["passthrough"];
+    auto scene_ctx = graphics::scene::get();
 
-    while(not glfwWindowShouldClose(window)) {
+    while(not glfwWindowShouldClose(game_state.window)) {
         glfwPollEvents();
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-            glfwSetWindowShouldClose(window, GL_TRUE);
+        if (glfwGetKey(game_state.window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+            glfwSetWindowShouldClose(game_state.window, GL_TRUE);
         }
 
         // game logic here
         scene_ctx->m_camera_params.projection = scene_ctx->m_camera_params.projection = glm::perspective(
-            glm::radians(camera_state.fov), width / (float)height, 1.f, 10.f
+            glm::radians(camera_state.fov), game_state.width / (float)game_state.height, 1.f, 10.f
         );
-
-        //board->rotate(1.f, glm::vec3(0,1,0));
-        //piece->translate(glm::vec3(0,-0.004f, 0));
-        //reflected_piece->translate(glm::vec3(0,-0.004f, 0));
-
-        // mouse picking
-        // if (mouse_state.left_button) {
-        //     glm::vec3 old_clear_colour = scene_ctx->m_clear_colour;
-        //     scene_ctx->m_clear_colour = glm::vec3(0);
-        //     scene_ctx->draw(1, true);
-        //     scene_ctx->m_clear_colour = old_clear_colour;
-        //     uint8_t colour[3] = {};
-        //     glReadPixels(
-        //         static_cast<GLint>(mouse_state.x),
-        //         height - static_cast<GLint>(mouse_state.y),
-        //         1, 1, GL_RGB, GL_UNSIGNED_BYTE, colour
-        //     );
-        //     // convert back to id
-        //     uint32_t id = 0;
-        //     id = (colour[2] << 16) | (colour[1] << 8) | (colour[0]);
-        //     std::cout << "id: " << id << std::endl;
-        // }
 
         scene_ctx->draw(graphics::render_type::shadow_map, 1);    
         scene_ctx->draw(graphics::render_type::gbuffer, 0);
         compositor.draw();
         
-        glfwSwapBuffers(window);
+        glfwSwapBuffers(game_state.window);
     }
 
     glfwTerminate();

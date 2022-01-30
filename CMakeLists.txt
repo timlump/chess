@@ -30,3 +30,7 @@ add_custom_command(TARGET ${CMAKE_PROJECT_NAME} PRE_BUILD
 add_custom_command(TARGET ${CMAKE_PROJECT_NAME} PRE_BUILD
                    COMMAND ${CMAKE_COMMAND} -E create_symlink
                    ${CMAKE_SOURCE_DIR}/scenes $<TARGET_FILE_DIR:${PROJECT_NAME}>/scenes)
+
+add_custom_command(TARGET ${CMAKE_PROJECT_NAME} PRE_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E create_symlink
+                   ${CMAKE_SOURCE_DIR}/scripts $<TARGET_FILE_DIR:${PROJECT_NAME}>/scripts)
