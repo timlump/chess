@@ -20,6 +20,8 @@ namespace graphics
         std::string m_vert_path;
         std::string m_frag_path;
 
+        int m_id;
+
     private:
         void load();
         void release();

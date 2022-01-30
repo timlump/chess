@@ -50,6 +50,8 @@ namespace graphics
             glm::vec3 m_min_dims;
             glm::vec3 m_max_dims;
 
+            int m_id;
+
         private:
             int m_num_vertices;
             GLuint m_vbo;
@@ -77,8 +79,10 @@ namespace graphics
             std::shared_ptr<mesh> m_mesh = nullptr;
 
             std::map<int,std::shared_ptr<shader>> m_shaders_layers;
+
+            int m_id;
+
         private:
-            unsigned int m_id;
             int m_current_shader = 0;
     };
 }

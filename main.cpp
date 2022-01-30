@@ -21,11 +21,12 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 struct
 {
     lua_State * lua_state = nullptr;
-    int width = 1024;
-    int height = 768;
-    GLFWwindow *window = nullptr;
+    int width = 800;
+    int height = 600;
+    GLFWwindow * window = nullptr;
     std::map<std::string, std::shared_ptr<graphics::mesh>> meshes;
     std::map<std::string, std::shared_ptr<graphics::shader>> shaders;
+    std::map<std::string, std::shared_ptr<graphics::mesh_instance>> mesh_instances;
 } game_state;
 
 // state
@@ -55,23 +56,60 @@ struct piece
 };
 
 // load_shader(name, vert_shader_path, frag_shader_path)
-int load_shader(lua_State* state) {
+int load_shader(lua_State* state)
+{
     std::string name = luaL_checkstring(state, 1);
     std::string vert = luaL_checkstring(state, 2);
     std::string frag = luaL_checkstring(state, 3);
 
     if (game_state.shaders.find(name) != game_state.shaders.end()) 
     {
-        return -1;
+        std::cerr << "Shader: " << name << " already exists\n";
     }
+    else {
+        auto shader = std::make_shared<graphics::shader>(
+            vert, frag  
+        );
 
-    auto shader = std::make_shared<graphics::shader>(
-        vert, frag  
-    );
+        game_state.shaders[name] = shader;
+    }
+    return 0;
+}
 
-    game_state.shaders[name] = shader;
+int create_mesh_instance(lua_State* state)
+{
+    std::string name = luaL_checkstring(state, 1);
+    auto mesh_instance = std::make_shared<graphics::mesh_instance>();
+    game_state.mesh_instances[name] = mesh_instance;
+    graphics::scene::get()->add_mesh(mesh_instance);
+    return 0;
+}
 
-    return 1;
+int set_mesh_instance_position(lua_State* state)
+{
+    std::string name = luaL_checkstring(state, 1);
+    for (int idx = 0 ; idx < 3; idx++) {
+        game_state.mesh_instances[name]->m_position[idx] = luaL_checknumber(state, idx + 2);
+    }
+    return 0;
+}
+
+int set_mesh_for_mesh_instance(lua_State* state)
+{
+    std::string mesh_instance_name = luaL_checkstring(state, 1);
+    std::string mesh_name = luaL_checkstring(state, 2);
+    game_state.mesh_instances[mesh_instance_name]->m_mesh = game_state.meshes[mesh_name];
+    return 0;
+}
+
+int set_shader_for_mesh_instance(lua_State* state)
+{
+    std::string mesh_name = luaL_checkstring(state, 1);
+    int layer = luaL_checkinteger(state, 2);
+    std::string shader_name = luaL_checkstring(state, 3);
+    
+    game_state.mesh_instances[mesh_name]->m_shaders_layers[layer] = game_state.shaders[shader_name];
+    return 0;
 }
 
 void reload_shaders()
@@ -90,15 +128,15 @@ int load_mesh(lua_State* state)
 
     if (game_state.meshes.find(name) != game_state.meshes.end()) 
     {
-        return -1;
+        std::cerr << "Mesh: " << name << " already exits\n";
     }
-
-    auto mesh = std::make_shared<graphics::mesh>(
-        graphics::load_model(filename, glm::vec3(scale)).vertices
-    );
-    game_state.meshes[name] = mesh;
-
-    return 1;
+    else {
+        auto mesh = std::make_shared<graphics::mesh>(
+            graphics::load_model(filename, glm::vec3(scale)).vertices
+        );
+        game_state.meshes[name] = mesh;
+    }
+    return 0;
 }
 
 void setup_subsystems();
@@ -111,11 +149,23 @@ int main()
     luaL_openlibs(game_state.lua_state);
 
     // hook up functions to lua
-    lua_pushcfunction(game_state.lua_state, load_mesh);
-    lua_setglobal(game_state.lua_state, "load_mesh");
+    {
+        lua_pushcfunction(game_state.lua_state, load_mesh);
+        lua_setglobal(game_state.lua_state, "load_mesh");
 
-    lua_pushcfunction(game_state.lua_state, load_shader);
-    lua_setglobal(game_state.lua_state, "load_shader");
+        lua_pushcfunction(game_state.lua_state, load_shader);
+        lua_setglobal(game_state.lua_state, "load_shader");
+
+        lua_pushcfunction(game_state.lua_state, create_mesh_instance);
+        lua_setglobal(game_state.lua_state, "create_mesh_instance");
+
+        lua_pushcfunction(game_state.lua_state, set_mesh_for_mesh_instance);
+        lua_setglobal(game_state.lua_state, "set_mesh_for_mesh_instance");
+
+        lua_pushcfunction(game_state.lua_state, set_shader_for_mesh_instance);
+        lua_setglobal(game_state.lua_state, "set_shader_for_mesh_instance");
+    }
+    
 
     setup_subsystems();
     graphics::scene::get(); // call this to create the singleton
@@ -246,17 +296,10 @@ void setup_game()
     std::vector<piece> white_pieces;
     std::vector<piece> black_pieces;
     
-    auto board = std::make_shared<graphics::mesh_instance>();
-    {
-        board->m_mesh = game_state.meshes["board"];
-        board->m_shaders_layers[0] = game_state.shaders["board"];
-        board->m_shaders_layers[1] = game_state.shaders["shadow"];
-    }
+    auto board = game_state.mesh_instances["board"];
 
     float board_side_width = board->m_mesh->m_max_dims.x - board->m_mesh->m_min_dims.x;
     float tile_width = board_side_width / 8;
-
-    scene_ctx->add_mesh(board);
 
     // board is already setup, use its state to create the pieces and position them properly
     for (int y = 0 ; y < 8 ; y++)
@@ -340,6 +383,8 @@ void game_loop()
     compositor.m_shader = game_state.shaders["passthrough"];
     auto scene_ctx = graphics::scene::get();
 
+    int frames = 0;
+    double t0 = glfwGetTime();
     while(not glfwWindowShouldClose(game_state.window)) {
         glfwPollEvents();
         if (glfwGetKey(game_state.window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
@@ -354,6 +399,16 @@ void game_loop()
         scene_ctx->draw(graphics::render_type::shadow_map, 1);    
         scene_ctx->draw(graphics::render_type::gbuffer, 0);
         compositor.draw();
+
+        double t = glfwGetTime();
+        if (t - t0 > 1.0) {
+            int fps = frames / (t - t0);
+            std::string fps_title = "FPS: " + std::to_string(fps);
+            glfwSetWindowTitle(game_state.window, fps_title.c_str());
+            t0 = t;
+            frames = 0;
+        }
+        frames++;
         
         glfwSwapBuffers(game_state.window);
     }

@@ -32,6 +32,10 @@ namespace graphics
     }
 
     mesh::mesh(std::vector<vertex> vertices) {
+        static int id = 0;
+        m_id = id;
+        id++;
+
         m_num_vertices = vertices.size();
 
         glGenVertexArrays(1, &m_vao);
@@ -94,9 +98,9 @@ namespace graphics
     mesh_instance::mesh_instance()
     {
          // for use by an id buffer - start at 1 so black means no id
-        static unsigned int current_id = 1;
-        m_id = current_id;
-        current_id++;
+        static int id = 0;
+        m_id = id;
+        id++;
     }
     
     void mesh_instance::draw(int layer)
