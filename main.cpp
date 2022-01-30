@@ -54,31 +54,24 @@ struct piece
     std::shared_ptr<graphics::mesh_instance> instance;
 };
 
-void load_shaders()
-{
-    game_state.shaders["id"] = std::make_shared<graphics::shader>(
-        "shaders/id.vert", "shaders/id.frag"
+// load_shader(name, vert_shader_path, frag_shader_path)
+int load_shader(lua_State* state) {
+    std::string name = luaL_checkstring(state, 1);
+    std::string vert = luaL_checkstring(state, 2);
+    std::string frag = luaL_checkstring(state, 3);
+
+    if (game_state.shaders.find(name) != game_state.shaders.end()) 
+    {
+        return -1;
+    }
+
+    auto shader = std::make_shared<graphics::shader>(
+        vert, frag  
     );
 
-    game_state.shaders["shadow"] = std::make_shared<graphics::shader>(
-        "shaders/shadow.vert", "shaders/shadow.frag"
-    );
+    game_state.shaders[name] = shader;
 
-    game_state.shaders["board"] = std::make_shared<graphics::shader>(
-        "shaders/default.vert", "shaders/checker.frag"
-    );
-
-    game_state.shaders["piece"] = std::make_shared<graphics::shader>(
-        "shaders/default.vert", "shaders/piece.frag"
-    );
-
-    game_state.shaders["passthrough"] = std::make_shared<graphics::shader>(
-        "shaders/passthrough.vert", "shaders/passthrough.frag"  
-    );
-
-    game_state.shaders["ssr"] = std::make_shared<graphics::shader>(
-        "shaders/passthrough.vert", "shaders/ssr.frag"  
-    );
+    return 1;
 }
 
 void reload_shaders()
@@ -95,7 +88,6 @@ int load_mesh(lua_State* state)
     std::string filename = luaL_checkstring(state, 2);
     double scale = luaL_checknumber(state,3);
 
-
     if (game_state.meshes.find(name) != game_state.meshes.end()) 
     {
         return -1;
@@ -107,12 +99,6 @@ int load_mesh(lua_State* state)
     game_state.meshes[name] = mesh;
 
     return 1;
-}
-
-void load_meshes()
-{
-    
-    
 }
 
 void setup_subsystems();
@@ -127,6 +113,9 @@ int main()
     // hook up functions to lua
     lua_pushcfunction(game_state.lua_state, load_mesh);
     lua_setglobal(game_state.lua_state, "load_mesh");
+
+    lua_pushcfunction(game_state.lua_state, load_shader);
+    lua_setglobal(game_state.lua_state, "load_shader");
 
     setup_subsystems();
     graphics::scene::get(); // call this to create the singleton
@@ -251,9 +240,6 @@ void setup_subsystems()
 void setup_game()
 {
     auto scene_ctx = graphics::scene::get();
-
-    load_shaders();
-    load_meshes();
 
     chess::board_state initial_board;
     chess::piece_colour current_player = chess::white;
