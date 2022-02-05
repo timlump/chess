@@ -1,8 +1,4 @@
-extern "C" {
-    #include <lua5.1/lua.h>
-    #include <lua5.1/lualib.h>
-    #include <lua5.1/lauxlib.h>
-}
+#include "binding.h"
 
 #include "chess.h"
 #include "scene.h"
@@ -25,7 +21,7 @@ struct
     int height = 600;
     GLFWwindow * window = nullptr;
     std::map<std::string, std::shared_ptr<graphics::mesh>> meshes;
-    std::map<std::string, std::shared_ptr<graphics::shader>> shaders;
+    
     std::map<std::string, std::shared_ptr<graphics::mesh_instance>> mesh_instances;
 } game_state;
 
@@ -54,27 +50,6 @@ struct piece
     chess::piece_colour colour;
     std::shared_ptr<graphics::mesh_instance> instance;
 };
-
-// load_shader(name, vert_shader_path, frag_shader_path)
-int load_shader(lua_State* state)
-{
-    std::string name = luaL_checkstring(state, 1);
-    std::string vert = luaL_checkstring(state, 2);
-    std::string frag = luaL_checkstring(state, 3);
-
-    if (game_state.shaders.find(name) != game_state.shaders.end()) 
-    {
-        std::cerr << "Shader: " << name << " already exists\n";
-    }
-    else {
-        auto shader = std::make_shared<graphics::shader>(
-            vert, frag  
-        );
-
-        game_state.shaders[name] = shader;
-    }
-    return 0;
-}
 
 int create_mesh_instance(lua_State* state)
 {
@@ -108,13 +83,13 @@ int set_shader_for_mesh_instance(lua_State* state)
     int layer = luaL_checkinteger(state, 2);
     std::string shader_name = luaL_checkstring(state, 3);
     
-    game_state.mesh_instances[mesh_name]->m_shaders_layers[layer] = game_state.shaders[shader_name];
+    game_state.mesh_instances[mesh_name]->m_shaders_layers[layer] = graphics::shader::m_shaders[shader_name];
     return 0;
 }
 
 void reload_shaders()
 {
-    for (auto& shader : game_state.shaders) {
+    for (auto& shader : graphics::shader::m_shaders) {
         shader.second->reload();
     }
 }
@@ -145,46 +120,27 @@ void game_loop();
 
 int main()
 {
-    game_state.lua_state = luaL_newstate();
-    luaL_openlibs(game_state.lua_state);
-
     // hook up functions to lua
     {
-        lua_pushcfunction(game_state.lua_state, load_mesh);
-        lua_setglobal(game_state.lua_state, "load_mesh");
+        graphics::shader::register_lua_functions();
 
-        lua_pushcfunction(game_state.lua_state, load_shader);
-        lua_setglobal(game_state.lua_state, "load_shader");
-
-        lua_pushcfunction(game_state.lua_state, create_mesh_instance);
-        lua_setglobal(game_state.lua_state, "create_mesh_instance");
-
-        lua_pushcfunction(game_state.lua_state, set_mesh_for_mesh_instance);
-        lua_setglobal(game_state.lua_state, "set_mesh_for_mesh_instance");
-
-        lua_pushcfunction(game_state.lua_state, set_shader_for_mesh_instance);
-        lua_setglobal(game_state.lua_state, "set_shader_for_mesh_instance");
+        binding::lua::get()->bind("load_mesh", load_mesh);
+        binding::lua::get()->bind("load_mesh", load_mesh);
+        binding::lua::get()->bind("create_mesh_instance", create_mesh_instance);
+        binding::lua::get()->bind("set_mesh_for_mesh_instance", set_mesh_for_mesh_instance);
+        binding::lua::get()->bind("set_shader_for_mesh_instance", set_shader_for_mesh_instance);
     }
     
 
     setup_subsystems();
     graphics::scene::get(); // call this to create the singleton
 
-    if (luaL_dofile(game_state.lua_state, "scripts/init.lua") == 0) {
-        if (lua_pcall(game_state.lua_state, 0, 0, 0) == 0) {
-            lua_pop(game_state.lua_state, lua_gettop(game_state.lua_state));
-        }
-    }
-    else {
-        std::string error_string = lua_tostring(game_state.lua_state, lua_gettop(game_state.lua_state));
-        lua_pop(game_state.lua_state, lua_gettop(game_state.lua_state));
-        std::cerr << "Lua Error: " << error_string << std::endl;
-    }
+    binding::lua::get()->execute("scripts/init.lua");
 
     setup_game();
     game_loop();
 
-    lua_close(game_state.lua_state);
+    binding::lua::release();
 
     return 0;
 }
@@ -360,8 +316,8 @@ void setup_game()
 
                 float piece_width = mesh_instance->m_mesh->m_max_dims.x - mesh_instance->m_mesh->m_min_dims.x;
 
-                mesh_instance->m_shaders_layers[0] = game_state.shaders["piece"];
-                mesh_instance->m_shaders_layers[1] = game_state.shaders["shadow"];
+                mesh_instance->m_shaders_layers[0] = graphics::shader::m_shaders["piece"];
+                mesh_instance->m_shaders_layers[1] = graphics::shader::m_shaders["shadow"];
 
                 mesh_instance->m_position.x = 
                     (tile_width*x) + (piece_width/2) - (board_side_width/2);
@@ -380,7 +336,7 @@ void setup_game()
 void game_loop()
 {
     graphics::compositor compositor;
-    compositor.m_shader = game_state.shaders["passthrough"];
+    compositor.m_shader = graphics::shader::m_shaders["passthrough"];
     auto scene_ctx = graphics::scene::get();
 
     int frames = 0;

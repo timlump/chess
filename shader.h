@@ -1,4 +1,6 @@
 #pragma once
+#include <map>
+#include <memory>
 #include <string>
 #define GLEW_STATIC
 #include <GL/glew.h>
@@ -8,6 +10,9 @@ namespace graphics
 {
     class shader {
     public:
+        static void register_lua_functions();
+        inline static std::map<std::string, std::shared_ptr<graphics::shader>> m_shaders;
+
         shader(std::string vert_path, std::string frag_path);
 
         ~shader();

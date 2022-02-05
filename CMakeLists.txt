@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(chess VERSION 0.1.0)
 
+SET(CMAKE_CXX_FLAGS "-std=c++17")
+
 find_program(CCACHE_FOUND ccache)
 if(CCACHE_FOUND)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
@@ -11,7 +13,8 @@ set(SOURCES
     shader.cpp
     mesh.cpp
     scene.cpp
-    compositor.cpp)
+    compositor.cpp
+    binding.cpp)
 
 add_executable(chess main.cpp ${SOURCES})
 add_executable(model_convert convert.cpp)

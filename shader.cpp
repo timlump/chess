@@ -1,11 +1,39 @@
 #include "shader.h"
 #include "mesh.h"
+#include "binding.h"
+
 #include <iostream>
 #include <stdexcept>
 #include <fstream>
 
 namespace graphics
 {
+    // load_shader(name, vert_shader_path, frag_shader_path)
+    int load_shader(lua_State* state)
+    {
+        std::string name = luaL_checkstring(state, 1);
+        std::string vert = luaL_checkstring(state, 2);
+        std::string frag = luaL_checkstring(state, 3);
+
+        if (shader::m_shaders.find(name) != shader::m_shaders.end()) 
+        {
+            std::cerr << "Shader: " << name << " already exists\n";
+        }
+        else {
+            auto shader = std::make_shared<graphics::shader>(
+                vert, frag  
+            );
+
+            shader::m_shaders[name] = shader;
+        }
+        return 0;
+    }
+    
+    void shader::register_lua_functions()
+    {
+        binding::lua::get()->bind("load_shader", load_shader);
+    }
+
     std::string readfile(std::string path)
     {
         std::string result = "";
