@@ -73,7 +73,7 @@ namespace graphics
         }
     }
 
-    int mesh_instance::create_mesh_instance(lua_State* state)
+    int mesh_instance::create(lua_State* state)
     {
         std::string name = luaL_checkstring(state, 1);
         std::string filename = luaL_checkstring(state, 2);
@@ -84,7 +84,7 @@ namespace graphics
         return 0;
     }
 
-    int mesh_instance::set_shader_for_mesh_instance(lua_State* state)
+    int mesh_instance::set_shader(lua_State* state)
     {
         std::string mesh_name = luaL_checkstring(state, 1);
         int layer = luaL_checkinteger(state, 2);
@@ -95,10 +95,26 @@ namespace graphics
         return 0;
     }
 
+    int mesh_instance::set_position(lua_State* state)
+    {
+        std::string mesh_name = luaL_checkstring(state, 1);
+        float x = luaL_checknumber(state, 2);
+        float y = luaL_checknumber(state, 3);
+        float z = luaL_checknumber(state, 4);
+
+        s_mesh_instances[mesh_name]->m_position = {x,y,z};
+        return 0;
+    }
+
     void mesh_instance::register_lua_functions()
     {
-        binding::lua::get()->bind("create_mesh_instance", mesh_instance::create_mesh_instance);
-        binding::lua::get()->bind("set_shader_for_mesh_instance", mesh_instance::set_shader_for_mesh_instance);
+        std::vector<luaL_Reg> funcs = {
+            {"create",mesh_instance::create},
+            {"set_shader",mesh_instance::set_shader},
+            {"set_position",mesh_instance::set_position}
+        };
+
+        binding::lua::get()->bind("mesh", funcs);
     }
 
     model_data load_model(std::string path, glm::vec3 scale, glm::vec3 offset)
@@ -149,7 +165,6 @@ namespace graphics
     void mesh_instance::draw(int layer)
     {
         if (m_shaders_layers.empty()) {
-            std::cerr << "Mesh has not shaders\n";
             return;
         }
 

@@ -1,5 +1,4 @@
 #include "binding.h"
-
 #include "chess.h"
 #include "scene.h"
 #include "primitives.h"
@@ -107,6 +106,18 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         {
             graphics::scene::get()->m_light_params.position.x += 0.01f;
         } break;
+
+        case GLFW_KEY_GRAVE_ACCENT:
+        {
+            if (action == GLFW_PRESS) {
+                std::string code;
+                std::cout << ">> ";
+                std::cin >> code;
+                if (not code.empty()) {
+                    binding::lua::get()->execute_interactive(code);
+                }
+            }
+        } break;
     }
 }
 
@@ -170,6 +181,7 @@ void setup_subsystems()
     glfwSetCursorPosCallback(game_state.window, mouse_pos_callback);
     glfwSetMouseButtonCallback(game_state.window, mouse_button_callback);
     glfwSetScrollCallback(game_state.window, scroll_callback);
+
 }
 
 void setup_game()
@@ -267,7 +279,7 @@ void setup_game()
 void game_loop()
 {
     graphics::compositor compositor;
-    compositor.m_shader = graphics::shader::get_shader("passthrough");
+    compositor.m_shader = graphics::shader::get_shader("passthrough_shader");
     auto scene_ctx = graphics::scene::get();
 
     int frames = 0;

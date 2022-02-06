@@ -25,7 +25,9 @@ namespace binding
             static lua * get();
             static void release();
             bool execute(std::string filename);
+            bool execute_interactive(std::string code);
 
+            void bind(std::string namespace_name, std::vector<luaL_Reg> funcs);
             void bind(std::string name, int (*func_ptr) (lua_State*));
     };
 }

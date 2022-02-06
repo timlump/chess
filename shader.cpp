@@ -34,7 +34,10 @@ namespace graphics
     
     void shader::register_lua_functions()
     {
-        binding::lua::get()->bind("load_shader", shader::load_shader);
+        std::vector<luaL_Reg> funcs = {
+            {"load", shader::load_shader}
+        };
+        binding::lua::get()->bind("shader",funcs);
     }
 
     std::shared_ptr<shader> shader::get_shader(std::string name)

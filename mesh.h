@@ -88,7 +88,8 @@ namespace graphics
             inline static std::map<std::string, std::shared_ptr<mesh_data>> s_mesh_data_cache;
             inline static std::map<std::string, std::shared_ptr<mesh_instance>> s_mesh_instances;
 
-            static int create_mesh_instance(lua_State* state);
-            static int set_shader_for_mesh_instance(lua_State* state);
+            static int create(lua_State* state);
+            static int set_shader(lua_State* state);
+            static int set_position(lua_State* state);
     };
 }

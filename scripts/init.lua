@@ -1,15 +1,15 @@
 -- load all shaders
 do
     local shader_entries = {
-        {"id", {"shaders/id.vert", "shaders/id.frag"}},
-        {"shadow", {"shaders/shadow.vert", "shaders/shadow.frag"}},
-        {"board", {"shaders/default.vert", "shaders/checker.frag"}},
-        {"piece", {"shaders/default.vert", "shaders/piece.frag"}},
-        {"passthrough", {"shaders/passthrough.vert", "shaders/passthrough.frag"}}
+        {"id_shader", {"shaders/id.vert", "shaders/id.frag"}},
+        {"shadow_shader", {"shaders/shadow.vert", "shaders/shadow.frag"}},
+        {"board_shader", {"shaders/default.vert", "shaders/checker.frag"}},
+        {"piece_shader", {"shaders/default.vert", "shaders/piece.frag"}},
+        {"passthrough_shader", {"shaders/passthrough.vert", "shaders/passthrough.frag"}}
     }
 
     for i,v in ipairs(shader_entries) do
-        load_shader(v[1],v[2][1],v[2][2])
+        shader.load(v[1],v[2][1],v[2][2])
     end
 end
 
@@ -27,8 +27,9 @@ do
     }
 end
 
--- setup mesh_instances
-create_mesh_instance("board","meshes/plane.bin")
+-- setup board
+mesh.create("board","meshes/plane.bin")
+mesh.set_shader("board", 0, "board_shader")
+mesh.set_shader("board", 1, "shadow_shader")
 
-set_shader_for_mesh_instance("board", 0, "board")
-set_shader_for_mesh_instance("board", 1, "shadow")
+-- setup pieces
