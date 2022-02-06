@@ -20,9 +20,6 @@ struct
     int width = 800;
     int height = 600;
     GLFWwindow * window = nullptr;
-    std::map<std::string, std::shared_ptr<graphics::mesh>> meshes;
-    
-    std::map<std::string, std::shared_ptr<graphics::mesh_instance>> mesh_instances;
 } game_state;
 
 // state
@@ -51,69 +48,6 @@ struct piece
     std::shared_ptr<graphics::mesh_instance> instance;
 };
 
-int create_mesh_instance(lua_State* state)
-{
-    std::string name = luaL_checkstring(state, 1);
-    auto mesh_instance = std::make_shared<graphics::mesh_instance>();
-    game_state.mesh_instances[name] = mesh_instance;
-    graphics::scene::get()->add_mesh(mesh_instance);
-    return 0;
-}
-
-int set_mesh_instance_position(lua_State* state)
-{
-    std::string name = luaL_checkstring(state, 1);
-    for (int idx = 0 ; idx < 3; idx++) {
-        game_state.mesh_instances[name]->m_position[idx] = luaL_checknumber(state, idx + 2);
-    }
-    return 0;
-}
-
-int set_mesh_for_mesh_instance(lua_State* state)
-{
-    std::string mesh_instance_name = luaL_checkstring(state, 1);
-    std::string mesh_name = luaL_checkstring(state, 2);
-    game_state.mesh_instances[mesh_instance_name]->m_mesh = game_state.meshes[mesh_name];
-    return 0;
-}
-
-int set_shader_for_mesh_instance(lua_State* state)
-{
-    std::string mesh_name = luaL_checkstring(state, 1);
-    int layer = luaL_checkinteger(state, 2);
-    std::string shader_name = luaL_checkstring(state, 3);
-    
-    game_state.mesh_instances[mesh_name]->m_shaders_layers[layer] = graphics::shader::m_shaders[shader_name];
-    return 0;
-}
-
-void reload_shaders()
-{
-    for (auto& shader : graphics::shader::m_shaders) {
-        shader.second->reload();
-    }
-}
-
-// load_mesh(name, path, scale)
-int load_mesh(lua_State* state)
-{
-    std::string name = luaL_checkstring(state, 1);
-    std::string filename = luaL_checkstring(state, 2);
-    double scale = luaL_checknumber(state,3);
-
-    if (game_state.meshes.find(name) != game_state.meshes.end()) 
-    {
-        std::cerr << "Mesh: " << name << " already exits\n";
-    }
-    else {
-        auto mesh = std::make_shared<graphics::mesh>(
-            graphics::load_model(filename, glm::vec3(scale)).vertices
-        );
-        game_state.meshes[name] = mesh;
-    }
-    return 0;
-}
-
 void setup_subsystems();
 void setup_game();
 void game_loop();
@@ -123,12 +57,7 @@ int main()
     // hook up functions to lua
     {
         graphics::shader::register_lua_functions();
-
-        binding::lua::get()->bind("load_mesh", load_mesh);
-        binding::lua::get()->bind("load_mesh", load_mesh);
-        binding::lua::get()->bind("create_mesh_instance", create_mesh_instance);
-        binding::lua::get()->bind("set_mesh_for_mesh_instance", set_mesh_for_mesh_instance);
-        binding::lua::get()->bind("set_shader_for_mesh_instance", set_shader_for_mesh_instance);
+        graphics::mesh_instance::register_lua_functions();
     }
     
 
@@ -156,7 +85,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     switch (key) {
         case GLFW_KEY_R:
         {
-            reload_shaders();
+            graphics::shader::reload_shaders();
         } break;
 
         case GLFW_KEY_UP:
@@ -247,17 +176,18 @@ void setup_game()
 {
     auto scene_ctx = graphics::scene::get();
 
-    chess::board_state initial_board;
-    chess::piece_colour current_player = chess::white;
-    std::vector<piece> white_pieces;
-    std::vector<piece> black_pieces;
+    // chess::board_state initial_board;
+    // chess::piece_colour current_player = chess::white;
+    // std::vector<piece> white_pieces;
+    // std::vector<piece> black_pieces;
     
-    auto board = game_state.mesh_instances["board"];
+    // auto board = game_state.mesh_instances["board"];
 
-    float board_side_width = board->m_mesh->m_max_dims.x - board->m_mesh->m_min_dims.x;
-    float tile_width = board_side_width / 8;
+    // float board_side_width = board->m_mesh->m_max_dims.x - board->m_mesh->m_min_dims.x;
+    // float tile_width = board_side_width / 8;
 
     // board is already setup, use its state to create the pieces and position them properly
+    /*
     for (int y = 0 ; y < 8 ; y++)
     {
         for (int x = 0 ; x < 8 ; x++)
@@ -316,8 +246,8 @@ void setup_game()
 
                 float piece_width = mesh_instance->m_mesh->m_max_dims.x - mesh_instance->m_mesh->m_min_dims.x;
 
-                mesh_instance->m_shaders_layers[0] = graphics::shader::m_shaders["piece"];
-                mesh_instance->m_shaders_layers[1] = graphics::shader::m_shaders["shadow"];
+                mesh_instance->m_shaders_layers[0] = graphics::shader::get_shader("piece");
+                mesh_instance->m_shaders_layers[1] = graphics::shader::get_shader("shadow");
 
                 mesh_instance->m_position.x = 
                     (tile_width*x) + (piece_width/2) - (board_side_width/2);
@@ -331,12 +261,13 @@ void setup_game()
             }
         }
     }
+    */
 }
 
 void game_loop()
 {
     graphics::compositor compositor;
-    compositor.m_shader = graphics::shader::m_shaders["passthrough"];
+    compositor.m_shader = graphics::shader::get_shader("passthrough");
     auto scene_ctx = graphics::scene::get();
 
     int frames = 0;

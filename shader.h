@@ -1,17 +1,20 @@
 #pragma once
-#include <map>
-#include <memory>
 #include <string>
+#include <memory>
+#include <map>
+
 #define GLEW_STATIC
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+
+// forward declare
+struct lua_State;
 
 namespace graphics
 {
     class shader {
     public:
         static void register_lua_functions();
-        inline static std::map<std::string, std::shared_ptr<graphics::shader>> m_shaders;
 
         shader(std::string vert_path, std::string frag_path);
 
@@ -27,10 +30,18 @@ namespace graphics
 
         int m_id;
 
+        static void reload_shaders();
+        static std::shared_ptr<shader> get_shader(std::string name);
+
     private:
         void load();
         void release();
         GLuint m_vertex_shader;
         GLuint m_fragment_shader;
+
+        inline static std::map<std::string, std::shared_ptr<shader>> s_shaders;
+
+        // lua functions
+        static int load_shader(lua_State* state);
     };
 }

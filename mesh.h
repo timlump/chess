@@ -40,10 +40,10 @@ namespace graphics
     model_data load_model(std::string path,
         glm::vec3 scale = glm::vec3(1), glm::vec3 offset = glm::vec3(0.f));
 
-    class mesh {
+    class mesh_data {
         public:
-            mesh(std::vector<vertex> vertices);
-            ~mesh();
+            mesh_data(std::vector<vertex> vertices);
+            ~mesh_data();
             void draw();
             void refresh(std::shared_ptr<shader> shader);
 
@@ -61,7 +61,7 @@ namespace graphics
     class mesh_instance
     {
         public:
-            mesh_instance();
+            mesh_instance(std::string filename);
 
             void draw(int layer = 0);
             
@@ -76,13 +76,19 @@ namespace graphics
 
             glm::vec3 m_colour = glm::vec3(1.f);
 
-            std::shared_ptr<mesh> m_mesh = nullptr;
-
             std::map<int,std::shared_ptr<shader>> m_shaders_layers;
 
             int m_id;
 
+            static void register_lua_functions();
+
         private:
-            int m_current_shader = 0;
+            std::shared_ptr<mesh_data> m_mesh = nullptr;
+
+            inline static std::map<std::string, std::shared_ptr<mesh_data>> s_mesh_data_cache;
+            inline static std::map<std::string, std::shared_ptr<mesh_instance>> s_mesh_instances;
+
+            static int create_mesh_instance(lua_State* state);
+            static int set_shader_for_mesh_instance(lua_State* state);
     };
 }

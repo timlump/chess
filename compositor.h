@@ -12,6 +12,6 @@ namespace graphics
             std::shared_ptr<shader> m_shader = nullptr;
 
         private:
-            std::shared_ptr<mesh> m_screen_rect = nullptr;
+            std::shared_ptr<mesh_data> m_screen_rect = nullptr;
     };
 }

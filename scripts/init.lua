@@ -25,15 +25,10 @@ do
         {"king", "meshes/king.bin"},
         {"unknown", "meshes/unknown.bin"}
     }
-    
-    scale = 0.05
-    for i,v in ipairs(mesh_entries) do
-        load_mesh(v[1], v[2], scale)
-    end
 end
 
 -- setup mesh_instances
-create_mesh_instance("board")
-set_mesh_for_mesh_instance("board", "board")
+create_mesh_instance("board","meshes/plane.bin")
+
 set_shader_for_mesh_instance("board", 0, "board")
 set_shader_for_mesh_instance("board", 1, "shadow")

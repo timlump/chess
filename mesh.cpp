@@ -1,37 +1,15 @@
 #include "mesh.h"
 #include "scene.h"
-
+#include "binding.h"
+#include <string>
 #include <fstream>
 #include <iostream>
 #include <glm/gtc/type_ptr.hpp>
 
 namespace graphics
 {
-    model_data load_model(std::string path, glm::vec3 scale, glm::vec3 offset)
+    mesh_data::mesh_data(std::vector<vertex> vertices)
     {
-        model_data result;
-        std::ifstream file(path, std::ifstream::in | std::ifstream::binary);
-        if (file.is_open())
-        {
-            unsigned int num_vertices = 0;
-            file.read((char*)&num_vertices, sizeof(num_vertices));
-
-            for (int idx = 0 ; idx < num_vertices ; idx++) {
-                vertex vert;
-                
-                vert.deserialise(file);
-                vert.pos *= scale;
-                vert.pos += offset;
-
-                result.vertices.push_back(vert);
-            }
-
-            file.close();
-        }
-        return result;
-    }
-
-    mesh::mesh(std::vector<vertex> vertices) {
         static int id = 0;
         m_id = id;
         id++;
@@ -55,18 +33,18 @@ namespace graphics
         }
     }
 
-    mesh::~mesh()
+    mesh_data::~mesh_data()
     {
         glDeleteBuffers(1, &m_vbo);
         glDeleteVertexArrays(1, &m_vao);
     }
 
-    void mesh::draw()
+    void mesh_data::draw()
     {
         glDrawArrays(GL_TRIANGLES, 0, m_num_vertices);
     }
 
-    void mesh::refresh(std::shared_ptr<shader> shader)
+    void mesh_data::refresh(std::shared_ptr<shader> shader)
     {
         glBindVertexArray(m_vao);
         glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
@@ -95,12 +73,77 @@ namespace graphics
         }
     }
 
-    mesh_instance::mesh_instance()
+    int mesh_instance::create_mesh_instance(lua_State* state)
+    {
+        std::string name = luaL_checkstring(state, 1);
+        std::string filename = luaL_checkstring(state, 2);
+
+        auto mesh_instance = std::make_shared<graphics::mesh_instance>(filename);
+        s_mesh_instances[name] = mesh_instance;
+        graphics::scene::get()->add_mesh(mesh_instance);
+        return 0;
+    }
+
+    int mesh_instance::set_shader_for_mesh_instance(lua_State* state)
+    {
+        std::string mesh_name = luaL_checkstring(state, 1);
+        int layer = luaL_checkinteger(state, 2);
+        std::string shader_name = luaL_checkstring(state, 3);
+        
+        s_mesh_instances[mesh_name]->m_shaders_layers[layer] 
+            = graphics::shader::get_shader(shader_name);
+        return 0;
+    }
+
+    void mesh_instance::register_lua_functions()
+    {
+        binding::lua::get()->bind("create_mesh_instance", mesh_instance::create_mesh_instance);
+        binding::lua::get()->bind("set_shader_for_mesh_instance", mesh_instance::set_shader_for_mesh_instance);
+    }
+
+    model_data load_model(std::string path, glm::vec3 scale, glm::vec3 offset)
+    {
+        model_data result;
+        std::ifstream file(path, std::ifstream::in | std::ifstream::binary);
+        if (file.is_open())
+        {
+            unsigned int num_vertices = 0;
+            file.read((char*)&num_vertices, sizeof(num_vertices));
+
+            for (int idx = 0 ; idx < num_vertices ; idx++) {
+                vertex vert;
+                
+                vert.deserialise(file);
+                vert.pos *= scale;
+                vert.pos += offset;
+
+                result.vertices.push_back(vert);
+            }
+
+            file.close();
+        }
+        return result;
+    }
+
+    mesh_instance::mesh_instance(std::string filename)
     {
          // for use by an id buffer - start at 1 so black means no id
         static int id = 0;
         m_id = id;
         id++;
+
+        auto find_iter = s_mesh_data_cache.find(filename);
+        if (find_iter != s_mesh_data_cache.end())
+        {
+            m_mesh = find_iter->second;
+        }
+        else
+        {
+            m_mesh = std::make_shared<graphics::mesh_data>(
+                graphics::load_model(filename, glm::vec3(0.05)).vertices
+            );
+            s_mesh_data_cache[filename] = m_mesh;
+        }
     }
     
     void mesh_instance::draw(int layer)
@@ -114,8 +157,6 @@ namespace graphics
         if (shader == m_shaders_layers.end()) {
             return;
         }
-
-        m_current_shader = layer;
 
         if (m_mesh) {
             m_mesh->refresh(shader->second);
