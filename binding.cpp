@@ -25,12 +25,9 @@ namespace binding
 
     bool lua::execute(std::string filename)
     {
-        if (luaL_dofile(m_state, filename.c_str()) == 0) {
-            if (lua_pcall(m_state, 0, 0, 0) == 0) {
-                lua_pop(m_state, lua_gettop(m_state));
-                return true;
-            }
-            return false;
+        if (luaL_dofile(m_state, filename.c_str()) == 0 && lua_pcall(m_state, 0, 0, 0) == 0) {
+            lua_pop(m_state, lua_gettop(m_state));
+            return true;
         }
         else {
             std::string error_string = lua_tostring(m_state, lua_gettop(m_state));
@@ -42,12 +39,9 @@ namespace binding
 
     bool lua::execute_interactive(std::string code)
     {
-        if (luaL_loadstring(m_state, code.c_str()) == 0) {
-            if (lua_pcall(m_state, 0, 0, 0) == 0) {
-                lua_pop(m_state, lua_gettop(m_state));
-                return true;
-            }
-            return false;
+        if (luaL_loadstring(m_state, code.c_str()) == 0 && lua_pcall(m_state, 0, 0, 0) == 0) {
+            lua_pop(m_state, lua_gettop(m_state));
+            return true;
         }
         else {
             std::string error_string = lua_tostring(m_state, lua_gettop(m_state));

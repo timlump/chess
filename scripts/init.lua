@@ -1,7 +1,6 @@
 -- load all shaders
 do
     local shader_entries = {
-        {"id_shader", {"shaders/id.vert", "shaders/id.frag"}},
         {"shadow_shader", {"shaders/shadow.vert", "shaders/shadow.frag"}},
         {"board_shader", {"shaders/default.vert", "shaders/checker.frag"}},
         {"piece_shader", {"shaders/default.vert", "shaders/piece.frag"}},

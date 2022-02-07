@@ -136,13 +136,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
             if (action == GLFW_PRESS) {
                 console::console * console = console::console::get();
                 console->m_visible = !console->m_visible;
-
-                // std::string code;
-                // std::cout << ">> ";
-                // std::cin >> code;
-                // if (not code.empty()) {
-                //     binding::lua::get()->execute_interactive(code);
-                // }
             }
         } break;
     }
