@@ -3,12 +3,14 @@
 #include "scene.h"
 #include "primitives.h"
 #include "compositor.h"
+#include "console.h"
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 
 // callbacks
 void error_callback(int error, const char * description);
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+void character_callback(GLFWwindow* window, unsigned int codepoint);
 void mouse_pos_callback(GLFWwindow* window, double x, double y);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
@@ -79,12 +81,34 @@ void error_callback(int error, const char * description)
     std::cerr << description << std::endl;
 }
 
+void character_callback(GLFWwindow* window, unsigned int codepoint)
+{
+    console::console::get()->insert_character(codepoint);
+}
+
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     switch (key) {
+
+        case GLFW_KEY_BACKSPACE:
+        {
+            if (action == GLFW_PRESS) {
+                console::console::get()->backspace();
+            }
+        } break;
+
+        case GLFW_KEY_ENTER:
+        {
+            if (action == GLFW_PRESS) {
+                console::console::get()->enter();
+            }
+        } break;
+
         case GLFW_KEY_R:
         {
-            graphics::shader::reload_shaders();
+            if (action == GLFW_PRESS) {
+                graphics::shader::reload_shaders();
+            }
         } break;
 
         case GLFW_KEY_UP:
@@ -110,12 +134,15 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         case GLFW_KEY_GRAVE_ACCENT:
         {
             if (action == GLFW_PRESS) {
-                std::string code;
-                std::cout << ">> ";
-                std::cin >> code;
-                if (not code.empty()) {
-                    binding::lua::get()->execute_interactive(code);
-                }
+                console::console * console = console::console::get();
+                console->m_visible = !console->m_visible;
+
+                // std::string code;
+                // std::cout << ">> ";
+                // std::cin >> code;
+                // if (not code.empty()) {
+                //     binding::lua::get()->execute_interactive(code);
+                // }
             }
         } break;
     }
@@ -181,7 +208,7 @@ void setup_subsystems()
     glfwSetCursorPosCallback(game_state.window, mouse_pos_callback);
     glfwSetMouseButtonCallback(game_state.window, mouse_button_callback);
     glfwSetScrollCallback(game_state.window, scroll_callback);
-
+    glfwSetCharCallback(game_state.window, character_callback);
 }
 
 void setup_game()
@@ -280,6 +307,8 @@ void game_loop()
 {
     graphics::compositor compositor;
     compositor.m_shader = graphics::shader::get_shader("passthrough_shader");
+    console::console::get()->m_shader = graphics::shader::get_shader("console_shader");
+    
     auto scene_ctx = graphics::scene::get();
 
     int frames = 0;
@@ -298,6 +327,7 @@ void game_loop()
         scene_ctx->draw(graphics::render_type::shadow_map, 1);    
         scene_ctx->draw(graphics::render_type::gbuffer, 0);
         compositor.draw();
+        console::console::get()->draw();
 
         double t = glfwGetTime();
         if (t - t0 > 1.0) {

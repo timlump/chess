@@ -10,6 +10,8 @@ if(CCACHE_FOUND)
 endif(CCACHE_FOUND)
 
 set(SOURCES
+    utils.cpp
+    console.cpp
     shader.cpp
     mesh.cpp
     scene.cpp

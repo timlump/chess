@@ -28,8 +28,6 @@ namespace graphics
         std::string m_vert_path;
         std::string m_frag_path;
 
-        int m_id;
-
         static void reload_shaders();
         static std::shared_ptr<shader> get_shader(std::string name);
 

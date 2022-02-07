@@ -80,10 +80,6 @@ namespace graphics
         m_vert_path = vert_path;
         m_frag_path = frag_path;
 
-        static int id = 0;
-        m_id = id;
-        id++;
-
         load();
     }
 

@@ -78,8 +78,6 @@ namespace graphics
 
             std::map<int,std::shared_ptr<shader>> m_shaders_layers;
 
-            int m_id;
-
             static void register_lua_functions();
 
         private:

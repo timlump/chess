@@ -10,10 +10,6 @@ namespace graphics
 {
     mesh_data::mesh_data(std::vector<vertex> vertices)
     {
-        static int id = 0;
-        m_id = id;
-        id++;
-
         m_num_vertices = vertices.size();
 
         glGenVertexArrays(1, &m_vao);
@@ -143,11 +139,6 @@ namespace graphics
 
     mesh_instance::mesh_instance(std::string filename)
     {
-         // for use by an id buffer - start at 1 so black means no id
-        static int id = 0;
-        m_id = id;
-        id++;
-
         auto find_iter = s_mesh_data_cache.find(filename);
         if (find_iter != s_mesh_data_cache.end())
         {
@@ -204,15 +195,6 @@ namespace graphics
             GLint proj_uniform = glGetUniformLocation(shader_program, "project");
             if (proj_uniform != -1) {
                 glUniformMatrix4fv(proj_uniform, 1, GL_FALSE, glm::value_ptr(scene::get()->get_proj_mat()));
-            }
-
-            GLint id_uniform = glGetUniformLocation(shader_program, "id_colour");
-            if (id_uniform != -1) {
-                glm::ivec3 id_colour = glm::vec3(0);
-                id_colour[0] = 0xFF & m_id;
-                id_colour[1] = 0xFF & (m_id << 8);
-                id_colour[2] = 0xFF & (m_id << 16);
-                glUniform3iv(id_uniform, 1, glm::value_ptr(id_colour));
             }
 
             GLint colour_location = glGetUniformLocation(shader_program, "colour");

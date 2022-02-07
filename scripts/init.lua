@@ -5,7 +5,8 @@ do
         {"shadow_shader", {"shaders/shadow.vert", "shaders/shadow.frag"}},
         {"board_shader", {"shaders/default.vert", "shaders/checker.frag"}},
         {"piece_shader", {"shaders/default.vert", "shaders/piece.frag"}},
-        {"passthrough_shader", {"shaders/passthrough.vert", "shaders/passthrough.frag"}}
+        {"passthrough_shader", {"shaders/passthrough.vert", "shaders/passthrough.frag"}},
+        {"console_shader", {"shaders/passthrough.vert","shaders/console.frag"}}
     }
 
     for i,v in ipairs(shader_entries) do
