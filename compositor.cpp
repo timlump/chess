@@ -7,7 +7,7 @@ namespace graphics
 {
     compositor::compositor()
     {
-        m_screen_rect = std::make_shared<mesh_data>(primitives::SQUARE2);
+        m_screen_rect = std::make_shared<vertex_mesh_data>(primitives::SQUARE2);
     }
 
     compositor::~compositor()

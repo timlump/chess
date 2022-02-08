@@ -10,6 +10,7 @@ if(CCACHE_FOUND)
 endif(CCACHE_FOUND)
 
 set(SOURCES
+    mesh_data.cpp
     utils.cpp
     console.cpp
     shader.cpp

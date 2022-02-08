@@ -27,7 +27,7 @@ namespace console
 
     console::console()
     {
-        m_screen_rect = std::make_shared<graphics::mesh_data>(primitives::SQUARE3);
+        m_screen_rect = std::make_shared<graphics::vertex_mesh_data>(primitives::SQUARE3);
 
         glGenTextures(1, &m_text_texture);
 
